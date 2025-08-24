@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Dict, Any
 
-from .DataPreprocessor import DataPreprocessor
-from .Encoder import Encoder
-from .TreeModel import TreeModel
-from .Predictioner import Predictioner
+from DataPreprocessor import DataPreprocessor
+from Encoder import Encoder
+from TreeModel import TreeModel
+from Predictioner import Predictioner
 
 
 class GNTO:
