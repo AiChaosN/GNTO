@@ -1,7 +1,5 @@
 
-__pycache__/
-.env
-*.pt
-artifacts/
+# 数据 && 结果
 data/
+result/
 tmp/
