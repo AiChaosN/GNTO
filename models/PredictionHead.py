@@ -1,8 +1,8 @@
 """Prediction heads for GNTO.
 
-``Predictioner`` is intentionally lightweight.  It applies a linear model to the
-vector produced by :class:`TreeModel`.  The weights can either be provided
-explicitly or are initialised to ones.  The class stores the weights so it can
+``PredictionHead`` is intentionally lightweight. It applies a linear model to the
+vector produced by :class:`TreeEncoder`. The weights can either be provided
+explicitly or are initialised to ones. The class stores the weights so it can
 be reused for multiple predictions.
 """
 
@@ -12,7 +12,7 @@ from typing import Iterable
 import numpy as np
 
 
-class Predictioner:
+class PredictionHead:
     """A minimal linear prediction head."""
 
     def __init__(self, weights: Iterable[float] | None = None) -> None:
