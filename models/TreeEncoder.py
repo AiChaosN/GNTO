@@ -20,63 +20,51 @@ from __future__ import annotations
 
 from typing import Iterable, List, Tuple, Optional, Union
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-# Try to import GNN dependencies
 try:
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
     from torch_geometric.nn import GCNConv, GATConv, global_mean_pool, global_max_pool
     from torch_geometric.data import Data, Batch
     _GNN_AVAILABLE = True
-except ImportError:
+except ImportError:  # pragma: no cover
     _GNN_AVAILABLE = False
-    torch = None
-    nn = None
-    F = None
 
 
-class TreeEncoder:
+class TreeEncoder(nn.Module):
     """Tree-level encoder using simple statistical aggregation."""
 
     def __init__(self, reduction: str = "mean") -> None:
         """Initialize tree model with reduction method.
-        
+
         Parameters
         ----------
         reduction:
             Reduction method: 'mean' or 'sum'
         """
+        super().__init__()
         if reduction not in {"mean", "sum"}:
             raise ValueError("reduction must be 'mean' or 'sum'")
         self.reduction = reduction
 
-    def forward(self, vectors: Iterable[np.ndarray]) -> np.ndarray:
-        """Reduce vectors into a single vector.
-
-        Parameters
-        ----------
-        vectors:
-            Iterable of numpy arrays representing encoded plan nodes.
-            
-        Returns
-        -------
-        np.ndarray:
-            Aggregated vector
-        """
-        stacked = self._pad_and_stack(list(vectors))
+    def forward(self, vectors: Iterable[Union[np.ndarray, 'torch.Tensor']]) -> 'torch.Tensor':
+        """Reduce vectors into a single tensor."""
+        vec_list = list(vectors)
+        stacked = self._pad_and_stack(vec_list)
         if self.reduction == "mean":
-            return stacked.mean(axis=0)
-        return stacked.sum(axis=0)
+            return stacked.mean(dim=0)
+        return stacked.sum(dim=0)
 
-    def _pad_and_stack(self, vecs: List[np.ndarray]) -> np.ndarray:
-        """Pad vectors to equal length and stack them."""
+    def _pad_and_stack(self, vecs: List[Union[np.ndarray, 'torch.Tensor']]) -> 'torch.Tensor':
+        """Pad vectors to equal length and stack them using torch."""
         if not vecs:
-            return np.zeros(0)
-        max_len = max(len(v) for v in vecs)
-        stacked = np.zeros((len(vecs), max_len))
-        for i, v in enumerate(vecs):
-            stacked[i, : len(v)] = v
+            return torch.zeros(0)
+        tensor_vecs = [torch.as_tensor(v, dtype=torch.float32) for v in vecs]
+        max_len = max(v.shape[0] for v in tensor_vecs)
+        stacked = torch.zeros(len(tensor_vecs), max_len, dtype=torch.float32)
+        for i, v in enumerate(tensor_vecs):
+            stacked[i, : v.shape[0]] = v
         return stacked
 
 

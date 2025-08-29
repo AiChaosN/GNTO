@@ -151,7 +151,11 @@ class GNTO:
             
             # Apply tree model aggregation
             vector = self.tree_model.forward(encoded_vectors)
-        
+
+        # Convert to numpy if tensor for prediction head
+        if hasattr(vector, 'detach'):
+            vector = vector.detach().cpu().numpy()
+
         # Make prediction
         return self.prediction_head.predict(vector)
     
