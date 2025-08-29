@@ -4,7 +4,27 @@ GNTO是一个基于机器学习的查询优化框架，专注于查询计划的�
 
 ## 项目概述
 
-GNTO采用分层架构设计，将查询优化分解为多个独立的组件，每个组件都有清晰的职责分工。项目基于简化的NodeEncoder设计，提供高效、可维护的查询计划处理能力。
+GNTO采用分层架构设计，将查询优化分解为多个独立的组件，每个组件都有清晰的职责分工。目前我将真个项目分为四大模块.
+
+## 项目结构
+
+```
+GNTO/
+├── docs/
+│   ├── NodeEncoder.md           # NodeEncoder设计文档
+├── examples/
+│   └── Demo.py                  # 完整演示代码
+├── models/
+│   ├── __init__.py              # 模块导入
+│   ├── DataPreprocessor.py      # JSON预处理
+│   ├── NodeEncoder.py           # 分块编码实现
+│   ├── TreeEncoder.py           # 树结构编码
+│   └── PredictionHead.py        # 预测头
+├── data/                        # 数据文件
+├── tmp/                         # 临时文件
+├── README.md                    # 项目说明
+└── requirements.txt             # 依赖列表
+```
 
 ## 架构设计
 
@@ -32,6 +52,7 @@ DataPreprocessor → NodeEncoder → TreeEncoder → PredictionHead
 - 数据统计 → MLP (log标准化+全连接) → [16维]
 - 谓词信息 → Simple Encoder (复杂度特征) → [8维]
 - 特征融合: Concat([32, 16, 8]) → Linear Projection → [64维]
+- 未来如果还有其他特征, 也可以继续添加
 
 #### 3. TreeEncoder - 结构级编码
 - **输入**: 带有节点向量的树/DAG
@@ -50,9 +71,9 @@ DataPreprocessor → NodeEncoder → TreeEncoder → PredictionHead
 class TreeNode:
     node_type: str                # 节点类型，如 "Seq Scan" / "Hash Join"
     children: List["TreeNode"]    # 子节点列表 (有向树/有向无环图结构)
-    extra_info: Dict[str, Any]    # 原始属性（来自JSON，例如表名、代价估计、基数估计等）
-    node_vector: Optional[torch.Tensor] = None  # 节点向量 (编码后得到)
-```
+    extra_info: Dict[str, Any]    # 原始属性（来自JSON，例如表名、代价估计、基数估计等）---- '待编码段'
+    node_vector: Optional[torch.Tensor] = None  # 节点向量 (编码后得到) 该部分为最终输入到Model中的部分 ---- '编码段'
+```'
 
 ### NodeEncoder输入特征
 
@@ -152,26 +173,7 @@ tree_encoder = create_tree_encoder(
 )
 ```
 
-## 项目结构
 
-```
-GNTO/
-├── docs/
-│   ├── NodeEncoder.md           # NodeEncoder设计文档
-│   └── 项目清理总结.md         # 项目清理总结
-├── examples/
-│   └── Demo.py                  # 完整演示代码
-├── models/
-│   ├── __init__.py              # 模块导入
-│   ├── DataPreprocessor.py      # JSON预处理
-│   ├── NodeEncoder.py           # 分块编码实现
-│   ├── TreeEncoder.py           # 树结构编码
-│   └── PredictionHead.py        # 预测头
-├── data/                        # 数据文件
-├── tmp/                         # 临时文件
-├── README.md                    # 项目说明
-└── requirements.txt             # 依赖列表
-```
 
 ## 演示和示例
 
@@ -207,65 +209,20 @@ python examples/Demo.py
 
 ## 扩展和定制
 
-### 添加新的编码方法
+### NodeEncoder层入手:
 
-在NodeEncoder基础上扩展新的特征编码：
+首先,更具大量论文分析,预测结果的好坏,很大的程度取决于NodeEncoder的编码的信息维度,或者说是信息量,完善的信息可以提高预测的准确度.
+目前正对该点还有几个方向可以进行摸索:
 
-```python
-def encode_custom_feature(self, node) -> torch.Tensor:
-    # 实现自定义特征编码
-    return feature_vector
+位置编码的高级运用:
+RoPE
 
-# 在forward方法中集成
-def forward(self, node) -> torch.Tensor:
-    operator_vec = self._encode_operator(node)
-    stats_vec = self._encode_stats(node)
-    custom_vec = self.encode_custom_feature(node)
-    
-    combined = torch.cat([operator_vec, stats_vec, custom_vec])
-    return self.output_projection(combined)
-```
+额外信息的传入:
+环境信息
 
-### 自定义树编码
+### TreeEncoder入手
+GNN不仅可以获取周围node的信息,也可以产出全局信息的embedding vector,
+在TreeEncoder层,可以先使用GNN编码,然后再后面使用Transformer来处理整体信息.
 
-```python
-# 继承TreeEncoder实现自定义聚合方法
-class CustomTreeEncoder(TreeEncoder):
-    def forward(self, vectors):
-        # 实现自定义聚合逻辑
-        return aggregated_vector
-```
 
-## 设计特点
 
-### 优势
-- **功能专一**: 每个组件职责清晰，便于理解和维护
-- **代码简洁**: 无冗余代码和依赖，架构清晰
-- **易于扩展**: 模块化设计，容易添加新功能
-- **即插即用**: 所有核心功能都可独立使用
-- **PyTorch原生**: 支持梯度传播和端到端训练
-
-### 适用场景
-- 查询计划性能预测
-- 查询优化器改进
-- 数据库系统研究
-- 机器学习与数据库交叉研究
-
-## 技术细节
-
-### 分块编码原理
-
-NodeEncoder采用Multi-View编码策略，将不同类型的特征分别处理：
-
-1. **算子类型**: 使用Embedding层将离散的算子类型映射为密集向量
-2. **数据统计**: 使用MLP处理数值特征，包含log标准化预处理
-3. **谓词信息**: 提取谓词复杂度特征，如范围过滤、子查询、函数调用等
-4. **特征融合**: 将所有特征拼接后通过线性投影层输出固定维度向量
-
-### GNN支持
-
-项目支持多种图神经网络模型：
-- **GCN**: 图卷积网络，适合处理同构图结构
-- **GAT**: 图注意力网络，自动学习节点间的重要性权重
-
-GNN功能需要安装torch-geometric，如果依赖不可用会自动回退到统计聚合方法。
