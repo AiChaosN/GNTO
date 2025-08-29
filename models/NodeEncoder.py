@@ -19,6 +19,9 @@ from dataclasses import dataclass
 import re
 from collections import Counter
 
+import torch
+import torch.nn as nn
+
 
 @dataclass
 class NodeFeatures:
@@ -34,7 +37,7 @@ class NodeFeatures:
     combined_features: np.ndarray  # Combined feature vector
 
 
-class NodeEncoder:
+class NodeEncoder(nn.Module):
     """Pure node-level encoder for converting individual PlanNodes to feature vectors.
     
     This is the NODE ENCODER layer in the correct architecture:
@@ -55,7 +58,7 @@ class NodeEncoder:
     2. Rich mode: Node type + numerical + categorical features
     """
     
-    def __init__(self, 
+    def __init__(self,
                  rich_features: bool = False,
                  feature_dim: Optional[int] = None,
                  include_numerical: bool = True,
@@ -76,6 +79,8 @@ class NodeEncoder:
         normalize_features:
             Whether to normalize numerical features
         """
+        super().__init__()
+
         # Core vocabulary for node types
         self.node_index: Dict[str, int] = {}
         
@@ -143,7 +148,7 @@ class NodeEncoder:
         return vocab_dict[key]
     
     # --------------------------------------------------------------------- encoder
-    def encode_node(self, node) -> np.ndarray:
+    def encode_node(self, node) -> 'torch.Tensor':
         """Encode a SINGLE PlanNode to feature vector and store it in node.node_vector.
         
         ⚠️  IMPORTANT: This method processes ONLY the given node.
@@ -165,10 +170,13 @@ class NodeEncoder:
         else:
             # Rich mode: comprehensive features
             vector = self._encode_rich(node)
-        
+
+        # Convert to torch tensor for downstream models
+        tensor = torch.as_tensor(vector, dtype=torch.float32)
+
         # Store the vector in the node
-        node.node_vector = vector
-        return vector
+        node.node_vector = tensor
+        return tensor
     
     def _encode_simple(self, node) -> np.ndarray:
         """Simple encoding: only node type (one-hot)."""
@@ -205,7 +213,7 @@ class NodeEncoder:
         
         return combined_features
     
-    def encode_nodes(self, nodes: Iterable) -> List[np.ndarray]:
+    def encode_nodes(self, nodes: Iterable) -> List['torch.Tensor']:
         """Encode multiple nodes into vectors and store them in each node.node_vector.
         
         Each node is processed independently and its vector is stored in node.node_vector.
@@ -221,6 +229,11 @@ class NodeEncoder:
             List of node-level feature vectors (also stored in each node.node_vector)
         """
         return [self.encode_node(node) for node in nodes]
+
+    # --------------------------------------------------------------------- nn.Module
+    def forward(self, node):
+        """Alias for encode_node to comply with nn.Module interface."""
+        return self.encode_node(node)
     
     # --------------------------------------------------------- feature extraction ---
     def _extract_numerical_features(self, node) -> np.ndarray:
