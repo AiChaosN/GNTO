@@ -305,22 +305,23 @@ if _GNN_AVAILABLE:
             self.model.to(self.device)
             self.model.eval()
         
-        def forward(self, vectors: Union[Iterable[np.ndarray], List]) -> np.ndarray:
+        def forward(self, input_data: Union[Iterable[np.ndarray], List, 'PlanNode']) -> np.ndarray:
             """Process input using GNN (compatible with TreeModel interface)."""
-            vectors = list(vectors)
+            # Handle tree structure input directly
+            if hasattr(input_data, 'node_type'):
+                # Tree structure input - use GNN
+                return self._process_tree(input_data)
             
+            # Handle vector list input
+            vectors = list(input_data)
             if not vectors:
                 return np.zeros(self.model.output_proj.out_features)
             
-            # Handle different input types
+            # Traditional vector input - use simple aggregation
             if isinstance(vectors[0], np.ndarray):
-                # Traditional vector input - use simple aggregation
                 return self._process_vectors(vectors)
-            elif hasattr(vectors[0], 'node_type'):
-                # Tree structure input - use GNN
-                return self._process_tree(vectors[0])
             else:
-                raise ValueError("Input must be either numpy arrays or tree structures")
+                raise ValueError("Input must be either tree structures or numpy arrays")
         
         def _process_vectors(self, vectors: List[np.ndarray]) -> np.ndarray:
             """Fallback to simple aggregation for vector input."""

@@ -129,7 +129,7 @@ def demonstrate_step_by_step():
     # Get sample plans
     sample_plans = create_sample_query_plans()
     
-    for i, plan in enumerate(sample_plans, 1):
+    for i, plan in enumerate(sample_plans, 2):
         print(f"\n示例计划 {i}: {plan['Node Type']}")
         print("-" * 50)
         
