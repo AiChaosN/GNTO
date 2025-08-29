@@ -24,7 +24,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from models import (
     DataPreprocessor, PlanNode,
     NodeEncoder, create_simple_node_encoder, create_node_encoder, create_large_node_encoder,
-    TreeEncoder, create_tree_encoder, is_gnn_available,
+    TreeEncoder, create_tree_encoder,
     PredictionHead
 )
 
@@ -272,24 +272,20 @@ def demonstrate_step_by_step():
         print(f"   - 大容量: {plan_embedding_large[:5].detach().numpy().tolist()}")
         
         # Try GNN encoder if available
-        if is_gnn_available():
-            print(f"\nGNN树编码器:")
-            try:
-                gnn_tree_encoder = create_tree_encoder(
-                    use_gnn=True, 
-                    model_type='gcn',
-                    input_dim=64,
-                    hidden_dim=128,
-                    output_dim=64
-                )
-                # Note: GNN encoder needs the original tree structure
-                gnn_embedding = gnn_tree_encoder.forward([tree_node])
-                print(f"   - GNN plan embedding: 维度 {len(gnn_embedding)}")
-            except Exception as e:
-                print(f"   - GNN编码失败: {e}")
-        else:
-            print(f"\n警告: GNN不可用 (需要PyTorch和PyTorch Geometric)")
-        
+        print(f"\nGNN树编码器:")
+        try:
+            gnn_tree_encoder = create_tree_encoder(
+                use_gnn=True, 
+                model_type='gcn',
+                input_dim=64,
+                hidden_dim=128,
+                output_dim=64
+            )
+            # Note: GNN encoder needs the original tree structure
+            gnn_embedding = gnn_tree_encoder.forward([tree_node])
+            print(f"   - GNN plan embedding: 维度 {len(gnn_embedding)}")
+        except Exception as e:
+            print(f"   - GNN编码失败: {e}")
         #####################################
         # Step 4: 预测头 (Prediction Head)
         #####################################
@@ -337,20 +333,20 @@ def demonstrate_end_to_end():
     except Exception as e:
         print(f"   传统GNTO初始化失败: {e}")
     
-    # GNN GNTO (if available)
-    if is_gnn_available():
-        print("\nGNN增强GNTO流水线:")
-        try:
-            gnn_gnto = create_gnn_gnto()
-            
-            for i, plan in enumerate(sample_plans, 1):
-                try:
-                    prediction = gnn_gnto.run(plan)
-                    print(f"   计划 {i} ({plan['Node Type']}): GNN预测值 = {prediction:.4f}")
-                except Exception as e:
-                    print(f"   计划 {i} GNN处理失败: {e}")
-        except Exception as e:
-            print(f"   GNN GNTO初始化失败: {e}")
+    # GNN GNTO
+
+    print("\nGNN增强GNTO流水线:")
+    try:
+        gnn_gnto = create_gnn_gnto()
+        
+        for i, plan in enumerate(sample_plans, 1):
+            try:
+                prediction = gnn_gnto.run(plan)
+                print(f"   计划 {i} ({plan['Node Type']}): GNN预测值 = {prediction:.4f}")
+            except Exception as e:
+                print(f"   计划 {i} GNN处理失败: {e}")
+    except Exception as e:
+        print(f"   GNN GNTO初始化失败: {e}")
     
     # Auto GNTO (automatic selection)
     print(f"\n自动选择GNTO流水线:")
@@ -360,7 +356,7 @@ def demonstrate_end_to_end():
         for i, plan in enumerate(sample_plans, 1):
             try:
                 prediction = auto_gnto.run(plan)
-                mode = "GNN" if is_gnn_available() else "传统"
+                mode = "GNN"
                 print(f"   计划 {i} ({plan['Node Type']}): {mode}预测值 = {prediction:.4f}")
             except Exception as e:
                 print(f"   计划 {i} 自动处理失败: {e}")

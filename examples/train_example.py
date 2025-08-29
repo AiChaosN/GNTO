@@ -103,13 +103,10 @@ def example_model_comparison():
     
     # Try to include GNN models if available
     try:
-        from models import is_gnn_available
-        if is_gnn_available():
-            # For quick comparison, we'll use smaller configs
-            models_to_test.append("gcn")
-            print("GNN models available - including GCN")
-        else:
-            print("GNN models not available - using statistical models only")
+
+        # For quick comparison, we'll use smaller configs
+        models_to_test.append("gat")
+        print("GNN models available - including GCN")
     except:
         print("GNN availability check failed - using statistical models only")
     

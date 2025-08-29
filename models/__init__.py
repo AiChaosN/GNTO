@@ -7,7 +7,7 @@ modes with automatic fallback when dependencies are not available.
 
 from .DataPreprocessor import DataPreprocessor, PlanNode
 from .NodeEncoder import NodeEncoder, create_node_encoder, create_simple_node_encoder, create_large_node_encoder
-from .TreeEncoder import TreeEncoder, create_tree_encoder, is_gnn_available
+from .TreeEncoder import TreeEncoder, create_tree_encoder
 from .PredictionHead import PredictionHead
 
 
@@ -53,9 +53,6 @@ __all__ = [
     "GCNTreeEncoder", 
     "GATTreeEncoder",
     "TreeToGraphConverter",
-    
-    # Utility functions
-    "is_gnn_available",
 ]
 
 # Package information
@@ -63,23 +60,20 @@ def get_package_info() -> dict:
     """Get information about the package and available components."""
     return {
         'version': '1.0.0',
-        'gnn_available': is_gnn_available(),
         'components': {
             'DataPreprocessor': 'Convert raw JSON plans to structured trees',
             'NodeEncoder': 'Encode plan nodes to numerical vectors using multi-view encoding',
             'TreeEncoder': 'Aggregate node vectors using statistical or GNN methods',
             'PredictionHead': 'Linear prediction head for final outputs'
         },
-        'gnn_models': ['GCN', 'GAT'] if is_gnn_available() else []
+        'gnn_models': ['GCN', 'GAT']
     }
 
 def print_package_info():
     """Print package information."""
     info = get_package_info()
     print(f"GNTO Models Package v{info['version']}")
-    print(f"GNN Support: {'Yes' if info['gnn_available'] else 'No'}")
-    if info['gnn_available']:
-        print(f"Available GNN Models: {', '.join(info['gnn_models'])}")
+
     print("\nComponents:")
     for name, desc in info['components'].items():
         print(f"  {name}: {desc}")

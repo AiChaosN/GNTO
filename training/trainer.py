@@ -26,7 +26,7 @@ except ImportError:
 try:
     from ..models import (
         DataPreprocessor, NodeEncoder, TreeEncoder, PredictionHead,
-        create_node_encoder, create_tree_encoder, is_gnn_available
+        create_node_encoder, create_tree_encoder,
     )
 except ImportError:
     # Fallback for when running as script
@@ -35,7 +35,7 @@ except ImportError:
     sys.path.insert(0, str(Path(__file__).parent.parent))
     from models import (
         DataPreprocessor, NodeEncoder, TreeEncoder, PredictionHead,
-        create_node_encoder, create_tree_encoder, is_gnn_available
+        create_node_encoder, create_tree_encoder,
     )
 from .dataset import PlanDataset, PlanSample
 from .metrics import calculate_metrics, MetricsTracker
@@ -83,14 +83,14 @@ class TrainingConfig:
         if self.model_type not in ["statistical", "gcn", "gat"]:
             raise ValueError(f"Invalid model_type: {self.model_type}")
         
-        if self.model_type in ["gcn", "gat"] and not is_gnn_available():
+        if self.model_type in ["gcn", "gat"]:
             logger.warning(f"GNN model '{self.model_type}' requested but PyTorch Geometric not available. "
                           "Falling back to statistical model.")
             self.model_type = "statistical"
 
 
-class GNTOModel:
-    """Complete GNTO model combining all components."""
+class GNTOModel(nn.Module):
+    """Complete GNTO model combining all components as a PyTorch module."""
     
     def __init__(self, config: TrainingConfig):
         """Initialize GNTO model.
@@ -98,6 +98,7 @@ class GNTOModel:
         Args:
             config: Training configuration
         """
+        super().__init__()
         self.config = config
         
         # Initialize components
@@ -113,7 +114,7 @@ class GNTOModel:
         # Always use GNN TreeEncoder, map statistical to gcn for compatibility
         if config.model_type.lower() == "statistical":
             # Map statistical to gcn for GNN processing
-            gnn_model_type = "gcn"
+            gnn_model_type = "gat"
         else:
             gnn_model_type = config.model_type
         
@@ -121,26 +122,30 @@ class GNTOModel:
             use_gnn=True,
             model_type=gnn_model_type,
             input_dim=config.hidden_dim,
-            hidden_dim=config.hidden_dim
+            hidden_dim=config.hidden_dim,
+            output_dim=config.hidden_dim  # Ensure output dimension matches hidden_dim
         )
         
-        # Initialize prediction head with random weights
-        # The existing PredictionHead expects weights as parameter
-        initial_weights = np.random.normal(0, 0.1, config.hidden_dim)
-        self.prediction_head = PredictionHead(weights=initial_weights)
+        # Create trainable prediction head with correct input dimension
+        # Tree encoder typically outputs the same dimension as hidden_dim
+        self.prediction_head = nn.Linear(config.hidden_dim, 1)
+        
+        # Initialize weights properly for better training
+        nn.init.xavier_uniform_(self.prediction_head.weight)
+        nn.init.zeros_(self.prediction_head.bias)
         
         # Target normalization parameters
         self.target_mean = 0.0
         self.target_std = 1.0
     
-    def forward(self, plan_tree) -> np.ndarray:
+    def forward(self, plan_tree) -> torch.Tensor:
         """Forward pass through the model.
         
         Args:
             plan_tree: PlanNode tree structure
             
         Returns:
-            Model predictions
+            Model predictions as torch.Tensor
         """
         # Encode nodes - need to encode each node in the tree
         def encode_tree_nodes(node):
@@ -159,10 +164,29 @@ class GNTOModel:
         # GNNTreeEncoder can handle tree structures directly
         tree_embedding = self.tree_encoder.forward(encoded_tree)
         
-        # Make prediction
-        prediction = self.prediction_head.predict(tree_embedding)
+        # Debug: print embedding shape (only for first few samples)
+        if hasattr(self, '_debug_count'):
+            self._debug_count += 1
+        else:
+            self._debug_count = 0
+            
+        if self._debug_count < 3:  # Only print first 3 samples
+            print(f"Debug: tree_embedding shape = {tree_embedding.shape}")
+            print(f"Debug: prediction_head input_dim = {self.prediction_head.in_features}")
         
-        return prediction
+        # Convert to torch tensor for prediction head
+        if isinstance(tree_embedding, np.ndarray):
+            tree_embedding = torch.from_numpy(tree_embedding).float()
+        
+        # Make prediction through trainable layer
+        prediction = self.prediction_head(tree_embedding.unsqueeze(0))  # Add batch dimension
+        return prediction.squeeze(0)  # Remove batch dimension
+    
+    def predict_numpy(self, plan_tree) -> np.ndarray:
+        """Make prediction and return as numpy array (for compatibility)."""
+        with torch.no_grad():
+            pred = self.forward(plan_tree)
+            return pred.detach().numpy()
     
     def fit_target_normalization(self, targets: np.ndarray):
         """Fit target normalization parameters.
@@ -202,6 +226,15 @@ class GNTOTrainer:
         """
         self.config = config
         self.model = GNTOModel(config)
+        
+        # Setup optimizer and loss function for PyTorch model
+        self.optimizer = optim.Adam(
+            self.model.parameters(), 
+            lr=config.learning_rate, 
+            weight_decay=config.weight_decay
+        )
+        self.criterion = nn.MSELoss()
+        
         self.metrics_tracker = MetricsTracker()
         
         # Create output directory
@@ -318,8 +351,10 @@ class GNTOTrainer:
         Returns:
             Training metrics for this epoch
         """
+        self.model.train()  # Set model to training mode
         predictions = []
         targets = []
+        total_loss = 0.0
         
         # Process all samples
         for sample in dataset.samples:
@@ -328,7 +363,26 @@ class GNTOTrainer:
                 pred = self.model.forward(sample.plan_tree)
                 target = sample.targets[self.config.target_column]
                 
-                predictions.append(pred)
+                # Convert target to tensor and normalize
+                target_tensor = torch.tensor([target], dtype=torch.float32)
+                if self.config.normalize_targets:
+                    target_tensor = (target_tensor - self.model.target_mean) / self.model.target_std
+                
+                # Calculate loss and backward pass
+                loss = self.criterion(pred, target_tensor)
+                self.optimizer.zero_grad()
+                loss.backward()
+                
+                # Clip gradients if specified
+                if self.config.clip_gradient:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.clip_gradient)
+                
+                self.optimizer.step()
+                
+                total_loss += loss.item()
+                
+                # Store predictions and targets for metrics
+                predictions.append(pred.detach().numpy())
                 targets.append(target)
                 
             except Exception as e:
@@ -346,8 +400,32 @@ class GNTOTrainer:
         
         # Calculate metrics
         metrics = calculate_metrics(targets, predictions_denorm)
-        
+        metrics['loss'] = total_loss / len(dataset.samples)
+
+        # Debug information
+        print(f"Debug: len(predictions) = {len(predictions)}, len(targets) = {len(targets)}")
+        if len(predictions) > 0:
+            print(f"Debug: predictions shape = {predictions.shape}, targets shape = {targets.shape}")
+            for i in range(min(5, len(predictions))):  # Only print first 5 for debugging
+                print(f"Prediction: {predictions[i]}, Target: {targets[i]}")
+        else:
+            print("Debug: No predictions generated!")
+
         return metrics
+    
+    def _check_model_updates(self):
+        """Check if model parameters are actually being updated during training."""
+        print("=== Model Parameter Update Check ===")
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                print(f"{name}: requires_grad=True, shape={param.shape}")
+                if hasattr(param, 'grad') and param.grad is not None:
+                    print(f"  - Gradient norm: {param.grad.norm().item():.6f}")
+                else:
+                    print("  - No gradient")
+            else:
+                print(f"{name}: requires_grad=False")
+        print("===================================")
     
     def _validate_epoch(self, dataset: PlanDataset, epoch: int, split_name: str = "validation") -> Dict[str, float]:
         """Validate for one epoch.
@@ -370,7 +448,8 @@ class GNTOTrainer:
                 pred = self.model.forward(sample.plan_tree)
                 target = sample.targets[self.config.target_column]
                 
-                predictions.append(pred)
+                # Convert prediction to numpy for metrics calculation
+                predictions.append(pred.detach().numpy())
                 targets.append(target)
                 
             except Exception as e:
@@ -464,7 +543,7 @@ class GNTOTrainer:
         for sample in dataset.samples:
             try:
                 pred = self.model.forward(sample.plan_tree)
-                predictions.append(pred)
+                predictions.append(pred.detach().numpy())
             except Exception as e:
                 logger.warning(f"Error predicting sample: {e}")
                 predictions.append(0.0)

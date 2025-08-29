@@ -262,6 +262,9 @@ def main():
         # Create trainer
         trainer = GNTOTrainer(config)
         
+        # Check model structure before training
+        trainer._check_model_updates()
+        
         # Train model
         logger.info("Starting training...")
         results = trainer.train(dataset)
