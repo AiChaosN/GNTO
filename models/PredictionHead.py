@@ -1,34 +1,21 @@
-"""Prediction heads for GNTO.
+# models/PredictionHead.py
+import torch
+import torch.nn as nn
 
-``PredictionHead`` is intentionally lightweight. It applies a linear model to the
-vector produced by :class:`TreeEncoder`. The weights can either be provided
-explicitly or are initialised to ones. The class stores the weights so it can
-be reused for multiple predictions.
-"""
+class PredictionHead(nn.Module):
+    def __init__(self, in_dim=64, hidden_dims=(128, 64), out_dim=1, dropout=0.1):
+        super().__init__()
+        layers = []
+        d = in_dim
+        for h in hidden_dims:
+            layers += [nn.Linear(d, h), nn.ReLU(), nn.Dropout(dropout)]
+            d = h
+        layers += [nn.Linear(d, out_dim)]
+        self.mlp = nn.Sequential(*layers)
 
-from __future__ import annotations
-
-from typing import Iterable, Union
-import numpy as np
-
-
-class PredictionHead:
-    """A minimal linear prediction head."""
-
-    def __init__(self, weights: Iterable[float] | None = None) -> None:
-        self.weights = np.array(list(weights), dtype=float) if weights is not None else None
-
-    def predict(self, features: Union[np.ndarray, 'torch.Tensor']) -> float:
-        """Return a scalar prediction for ``features``."""
-        
-        # Convert torch.Tensor to numpy if needed
-        if hasattr(features, 'detach'):  # torch.Tensor
-            features_np = features.detach().numpy()
-        else:
-            features_np = features
-
-        if self.weights is None:
-            self.weights = np.ones_like(features_np, dtype=float)
-        if len(self.weights) < len(features_np):
-            self.weights = np.pad(self.weights, (0, len(features_np) - len(self.weights)))
-        return float(np.dot(self.weights[: len(features_np)], features_np))
+    def forward(self, plan_emb: torch.Tensor) -> torch.Tensor:
+        # plan_emb 可能是 [D] 或 [B, D]；都压成 [B, D]
+        if plan_emb.dim() == 1:
+            plan_emb = plan_emb.unsqueeze(0)
+        out = self.mlp(plan_emb)       # [B, 1]
+        return out.squeeze(-1)         # [B] 或标量

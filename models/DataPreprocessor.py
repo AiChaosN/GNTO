@@ -168,9 +168,12 @@ class DataPreprocessor:
                 details.append(f"Join Type: {node.extra_info['Join Type']}")
             
             if details:
-                main_line += f" ({', '.join(details[:3])})"  # Limit to first 3 details
-                if len(details) > 3:
-                    main_line += f" [+{len(details)-3} more]"
+                main_line += f" ({', '.join(details[:])})"
+                # main_line += f", node_vector: {node.node_vector}"
+                if node.node_vector is not None:
+                    main_line += f", node_vector_shape: {node.node_vector.shape}"
+                # if len(details) > 3:
+                #     main_line += f" [+{len(details)-3} more]"
         
         lines.append(main_line)
         

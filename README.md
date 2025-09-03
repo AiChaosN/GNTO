@@ -38,14 +38,21 @@ DataPreprocessor → NodeEncoder → TreeEncoder → PredictionHead
 ```
 
 #### 1. DataPreprocessor - 数据预处理
-- **输入**: 原始JSON风格的查询计划
-- **输出**: TreeNode结构化数据
-- **功能**: 将原始查询计划转换为树形结构，提供树可视化功能
+数据预处理一共分为两大部分:处理Plan数据和获取全局信息.
+- 首先是将CSV文件读取为json文件.获取其中的 x 和 y, 也就是目前的 Plan 和 Execution Time
+- 然后将json文件中的Plan转换为PlanNode结构.
+```python
+PlanNode(
+    node_type : str 节点的类型,比如Seq Scan, Hash Join等
+    children=[] : List["PlanNode"] 这里面的信息就是节点的所有子节点
+    extra_info : Dict[str, Any] 这里面的信息就是节点的所有信息
+    node_vector : Optional[np.ndarray] 这个就是将上面的extra_info编码后的结果作为vector存放在这里.
+)
+```
 
 #### 2. NodeEncoder - 节点级编码
-- **输入**: TreeNode（每个节点的vector为空）
-- **输出**: TreeNode（每个节点都有node_vector）
-- **功能**: 使用分块编码策略，将每个查询计划节点编码为数值向量
+该模块主要就是将PlanNode的extra_info编码为node_vector,这个编码的结果将会作为TreeEncoder的输入.
+而这也是整个项目中最重要的部分,因为后续的预测结果的好坏,很大程度上取决于这个编码的结果.
 
 **分块编码策略**:
 - 算子类型 → Embedding Layer → [32维]
@@ -55,25 +62,16 @@ DataPreprocessor → NodeEncoder → TreeEncoder → PredictionHead
 - 未来如果还有其他特征, 也可以继续添加
 
 #### 3. TreeEncoder - 结构级编码
-- **输入**: 带有节点向量的树/DAG
-- **输出**: 全局plan embedding
-- **功能**: 将所有节点向量聚合成单一的计划表示
-- **支持方法**: 统计聚合(mean/sum)、GNN模型(GCN/GAT)
+该模块主要有两个Class
+- TreeToGraphConverter: 将TreeNode转换为Graph
+由于之前的结构为PlanNode结构,这个结构是我自定义的结构体,不适合用于GNN模型,所以需要将PlanNode转换为Graph,
+而转换为Graph时的输入就是我的结构体PlanNode,输出则是Graph的 x 和 edge_index,其中x为Graph的节点特征,edge_index为Graph的边索引,代表了节点之间的连接关系.(因为它是有向图,所以需要两个方向的边索引)
+
+- GATTreeEncoder: 使用GAT模型进行编码
+这个模型目前使用的就是GAT模型,如果之后想使用其他模型,并且传入的向量则是PlanNode的node_vector,如果后续需要在这部分进行添加维度可以在后续进行修改.
 
 #### 4. PredictionHead - 预测输出
-- **输入**: plan embedding向量
-- **输出**: 最终预测结果
-- **功能**: 线性预测头，支持torch.Tensor和numpy数组输入
-
-### 数据类型
-
-```python
-class TreeNode:
-    node_type: str                # 节点类型，如 "Seq Scan" / "Hash Join"
-    children: List["TreeNode"]    # 子节点列表 (有向树/有向无环图结构)
-    extra_info: Dict[str, Any]    # 原始属性（来自JSON，例如表名、代价估计、基数估计等）---- '待编码段'
-    node_vector: Optional[torch.Tensor] = None  # 节点向量 (编码后得到) 该部分为最终输入到Model中的部分 ---- '编码段'
-```'
+这部分主要就是线性预测头,传入的向量则是TreeEncoder的输出,输出则是最终的预测结果.目前使用的就是最传统的线性预测头.
 
 ### NodeEncoder输入特征
 
@@ -100,129 +98,47 @@ NodeEncoder处理的特征类型包括：
 - **actual_rows** (float, 可选) - 真实执行行数
 - **actual_time** (float, 可选) - 真实执行时间
 
-## 安装和依赖
-
-### 基础依赖
-```
-numpy>=1.21.0
-torch>=1.9.0
-```
-
-### 可选依赖 (GNN功能)
-```
-torch-geometric>=2.0.0
-torch-scatter>=2.0.0
-torch-sparse>=0.6.0
-```
-
-安装命令：
-```bash
-pip install -r requirements.txt
-```
-
-## 使用方法
-
-### 基本使用流程
-
-```python
-from models import (
-    DataPreprocessor, 
-    create_node_encoder, 
-    create_tree_encoder, 
-    PredictionHead
-)
-
-# 1. 预处理
-preprocessor = DataPreprocessor()
-tree_node = preprocessor.preprocess(json_plan)
-
-# 2. 节点编码 (自动处理所有节点)
-encoder = create_node_encoder()  # 64维标准编码
-vectors = encoder.encode_nodes(collect_all_nodes(tree_node))
-
-# 3. 树编码
-tree_encoder = create_tree_encoder()
-plan_embedding = tree_encoder.forward(vectors)
-
-# 4. 预测
-predictor = PredictionHead()
-result = predictor.predict(plan_embedding)
-```
-
-### 编码器选择
-
-项目提供多种预配置的编码器：
-
-- `create_simple_node_encoder()` - 32维输出，适合快速原型开发
-- `create_node_encoder()` - 64维输出，标准分块编码
-- `create_large_node_encoder()` - 128维输出，高容量编码
-
-### 树编码选择
-
-```python
-# 统计聚合方法
-tree_encoder = create_tree_encoder(use_gnn=False, reduction="mean")
-
-# GNN方法 (需要torch-geometric)
-tree_encoder = create_tree_encoder(
-    use_gnn=True, 
-    model_type='gcn',
-    input_dim=64,
-    hidden_dim=128,
-    output_dim=64
-)
-```
-
-
-
-## 演示和示例
-
-运行完整演示：
-```bash
-python examples/Demo.py
-```
-
-演示内容包括：
-- 逐步处理流程展示
-- 多种编码器对比
-- 树结构可视化
-- 向量信息详细展示
 
 ### 示例输出
 
-树结构可视化：
-```
-└── Gather (Total Cost: 154548.95, Startup Cost: 23540.58, Plan Rows: 567655)
-    └── Hash Join (Total Cost: 96783.45, Startup Cost: 22540.58, Plan Rows: 236523)
-        ├── Seq Scan (Total Cost: 49166.46, Startup Cost: 0.00, Plan Rows: 649574)
-        └── Hash (Total Cost: 15122.68, Startup Cost: 15122.68, Plan Rows: 383592)
-            └── Seq Scan (Total Cost: 15122.68, Startup Cost: 0.00, Plan Rows: 383592)
+最开始在SCV文件中的一条Plan的结构为:
+```python
+plans_json:
+ {"Plan": {"Node Type": "Gather", "Parallel Aware": false, "Startup Cost": 23540.58, "Total Cost": 154548.95, "Plan Rows": 567655, "Plan Width": 119, "Actual Startup Time": 386.847, "Actual Total Time": 646.972, "Actual Rows": 283812, "Actual Loops": 1, "Workers Planned": 2, "Workers Launched": 2, "Single Copy": false, "Plans": [{"Node Type": "Hash Join", "Parent Relationship": "Outer", "Parallel Aware": true, "Join Type": "Inner", "Startup Cost": 22540.58, "Total Cost": 96783.45, "Plan Rows": 236523, "Plan Width": 119, "Actual Startup Time": 369.985, "Actual Total Time": 518.487, "Actual Rows": 94604, "Actual Loops": 3, "Inner Unique": false, "Hash Cond": "(t.id = mi_idx.movie_id)", "Workers": [], "Plans": [{"Node Type": "Seq Scan", "Parent Relationship": "Outer", "Parallel Aware": true, "Relation Name": "title", "Alias": "t", "Startup Cost": 0.0, "Total Cost": 49166.46, "Plan Rows": 649574, "Plan Width": 94, "Actual Startup Time": 0.366, "Actual Total Time": 147.047, "Actual Rows": 514421, "Actual Loops": 3, "Filter": "(kind_id = 7)", "Rows Removed by Filter": 328349, "Workers": []}, {"Node Type": "Hash", "Parent Relationship": "Inner", "Parallel Aware": true, "Startup Cost": 15122.68, "Total Cost": 15122.68, "Plan Rows": 383592, "Plan Width": 25, "Actual Startup Time": 103.547, "Actual Total Time": 103.547, "Actual Rows": 306703, "Actual Loops": 3, "Hash Buckets": 65536, "Original Hash Buckets": 65536, "Hash Batches": 32, "Original Hash Batches": 32, "Peak Memory Usage": 1920, "Workers": [], "Plans": [{"Node Type": "Seq Scan", "Parent Relationship": "Outer", "Parallel Aware": true, "Relation Name": "movie_info_idx", "Alias": "mi_idx", "Startup Cost": 0.0, "Total Cost": 15122.68, "Plan Rows": 383592, "Plan Width": 25, "Actual Startup Time": 0.28, "Actual Total Time": 54.382, "Actual Rows": 306703, "Actual Loops": 3, "Filter": "(info_type_id > 99)", "Rows Removed by Filter": 153308, "Workers": []}]}]}]}, "Planning Time": 2.382, "Triggers": [], "Execution Time": 654.241}
+
 ```
 
-节点向量信息：
+经过DataPreprocessor处理后,最终的结构为:
 ```
-节点 1: Hash Join
-  向量维度: torch.Size([64])
-  向量值 (前8个): [0.233, 0.296, -1.283, 0.932, -0.670, -0.483, -0.033, -0.388]
-  向量范围: [-1.687, 1.124]
+└── Gather (Total Cost: 154548.95, Startup Cost: 23540.58, Plan Rows: 567655, Plan Width: 119, Actual Total Time: 646.97, Actual Rows: 283812)
+    └── Hash Join (Total Cost: 96783.45, Startup Cost: 22540.58, Plan Rows: 236523, Plan Width: 119, Actual Total Time: 518.49, Actual Rows: 94604, Join Type: Inner)
+        ├── Seq Scan (Total Cost: 49166.46, Startup Cost: 0.00, Plan Rows: 649574, Plan Width: 94, Actual Total Time: 147.05, Actual Rows: 514421, Relation Name: title, Alias: t)
+        └── Hash (Total Cost: 15122.68, Startup Cost: 15122.68, Plan Rows: 383592, Plan Width: 25, Actual Total Time: 103.55, Actual Rows: 306703)
+            └── Seq Scan (Total Cost: 15122.68, Startup Cost: 0.00, Plan Rows: 383592, Plan Width: 25, Actual Total Time: 54.38, Actual Rows: 306703, Relation Name: movie_info_idx, Alias: mi_idx)
 ```
 
-## 扩展和定制
+经过NodeEncoder编码后,节点向量信息为:
+```
+└── Gather (Total Cost: 154548.95, Startup Cost: 23540.58, Plan Rows: 567655, Plan Width: 119, Actual Total Time: 646.97, Actual Rows: 283812), node_vector_shape: torch.Size([64])
+    └── Hash Join (Total Cost: 96783.45, Startup Cost: 22540.58, Plan Rows: 236523, Plan Width: 119, Actual Total Time: 518.49, Actual Rows: 94604, Join Type: Inner), node_vector_shape: torch.Size([64])
+        ├── Seq Scan (Total Cost: 49166.46, Startup Cost: 0.00, Plan Rows: 649574, Plan Width: 94, Actual Total Time: 147.05, Actual Rows: 514421, Relation Name: title, Alias: t), node_vector_shape: torch.Size([64])
+        └── Hash (Total Cost: 15122.68, Startup Cost: 15122.68, Plan Rows: 383592, Plan Width: 25, Actual Total Time: 103.55, Actual Rows: 306703), node_vector_shape: torch.Size([64])
+            └── Seq Scan (Total Cost: 15122.68, Startup Cost: 0.00, Plan Rows: 383592, Plan Width: 25, Actual Total Time: 54.38, Actual Rows: 306703, Relation Name: movie_info_idx, Alias: mi_idx), node_vector_shape: torch.Size([64])
+```
 
-### NodeEncoder层入手:
+经过TreeToGraphConverter后结构为:
+```Python
+x.shape, edge_index.shape: torch.Size([4, 64]) torch.Size([2, 6])
+```
 
-首先,更具大量论文分析,预测结果的好坏,很大的程度取决于NodeEncoder的编码的信息维度,或者说是信息量,完善的信息可以提高预测的准确度.
-目前正对该点还有几个方向可以进行摸索:
+经过GATTreeEncoder编码后结构为:
+```Python
+torch.Size([64])
+```
 
-位置编码的高级运用:
-RoPE
-
-额外信息的传入:
-环境信息
-
-### TreeEncoder入手
-GNN不仅可以获取周围node的信息,也可以产出全局信息的embedding vector,
-在TreeEncoder层,可以先使用GNN编码,然后再后面使用Transformer来处理整体信息.
-
+经过PredictionHead编码后结构为:
+```Python
+654.241
+```
 
 

@@ -24,23 +24,17 @@ import numpy as np
 import torch
 import torch.nn as nn
 import re
+from .DataPreprocessor import PlanNode
 
 
 class NodeEncoder(nn.Module):
     """Pure node-level encoder using multi-view encoding strategy.
-    
     分块编码策略：
     1. 算子类型 → Embedding Layer
     2. 数据统计 → MLP (标准化 + 全连接)
     3. 谓词信息 → Simple Encoder (复杂度特征)
     4. 最后 Concat 所有特征
-    
-    ⚠️  CRITICAL: This encoder handles ONLY node-level features.
-    - NO recursive processing of children
-    - NO tree structure aggregation
-    - NO graph construction
-    
-    Structure-level encoding (tree/graph aggregation) is handled by TreeModel.
+
     """
     
     def __init__(self, 
@@ -202,6 +196,7 @@ class NodeEncoder(nn.Module):
         
         return torch.tensor(features[:self.predicate_dim], dtype=torch.float32)
     
+    # 编码函数
     def forward(self, node) -> torch.Tensor:
         """分块编码 + Concat
         
@@ -267,6 +262,47 @@ class NodeEncoder(nn.Module):
         """
         return [self.encode_node(node) for node in nodes]
     
+    @staticmethod
+    def collect_nodes(root: PlanNode, method: str = "dfs") -> List[PlanNode]:
+        """
+        遍历 PlanNode 树，收集所有节点为列表
+        
+        Parameters
+        ----------
+        root : PlanNode
+            根节点
+        method : str
+            遍历方式，可选 "dfs" (深度优先) 或 "bfs" (广度优先)
+        
+        Returns
+        -------
+        List[PlanNode]
+            树中所有节点的列表
+        """
+        nodes = []
+        
+        if method == "dfs":
+            # 递归深度优先
+            def dfs(node: PlanNode):
+                nodes.append(node)
+                for child in node.children:
+                    dfs(child)
+            dfs(root)
+        
+        elif method == "bfs":
+            # 队列广度优先
+            queue = [root]
+            while queue:
+                node = queue.pop(0)
+                nodes.append(node)
+                queue.extend(node.children)
+        
+        else:
+            raise ValueError("method 必须是 'dfs' 或 'bfs'")
+        
+        return nodes
+
+    # 获取信息
     def get_output_dim(self) -> int:
         """获取输出维度"""
         return self.output_dim
@@ -285,54 +321,3 @@ class NodeEncoder(nn.Module):
             'vocab_size': len(self.node_type_vocab),
             'initialized': self._initialized
         }
-
-
-# 便利工厂函数
-def create_node_encoder(operator_dim: int = 32,
-                       stats_dim: int = 16, 
-                       predicate_dim: int = 8,
-                       output_dim: int = 64) -> NodeEncoder:
-    """创建NodeEncoder实例
-    
-    Parameters
-    ----------
-    operator_dim: int
-        算子embedding维度
-    stats_dim: int
-        统计特征MLP隐层维度
-    predicate_dim: int
-        谓词特征维度
-    output_dim: int
-        输出维度
-        
-    Returns
-    -------
-    NodeEncoder
-        配置好的节点编码器
-    """
-    return NodeEncoder(
-        operator_embedding_dim=operator_dim,
-        stats_hidden_dim=stats_dim,
-        predicate_dim=predicate_dim,
-        output_dim=output_dim
-    )
-
-
-def create_simple_node_encoder() -> NodeEncoder:
-    """创建简单的节点编码器 (小维度)"""
-    return NodeEncoder(
-        operator_embedding_dim=16,
-        stats_hidden_dim=8,
-        predicate_dim=4,
-        output_dim=32
-    )
-
-
-def create_large_node_encoder() -> NodeEncoder:
-    """创建大容量节点编码器 (大维度)"""
-    return NodeEncoder(
-        operator_embedding_dim=64,
-        stats_hidden_dim=32,
-        predicate_dim=16,
-        output_dim=128
-    )

@@ -6,75 +6,15 @@ modes with automatic fallback when dependencies are not available.
 """
 
 from .DataPreprocessor import DataPreprocessor, PlanNode
-from .NodeEncoder import NodeEncoder, create_node_encoder, create_simple_node_encoder, create_large_node_encoder
-from .TreeEncoder import TreeEncoder, create_tree_encoder
+from .NodeEncoder import NodeEncoder
+from .TreeEncoder import TreeToGraphConverter, GATTreeEncoder
 from .PredictionHead import PredictionHead
-
-
-# Try to import GNN-specific classes
-try:
-    from .TreeEncoder import GNNTreeEncoder, GCNTreeEncoder, GATTreeEncoder, TreeToGraphConverter
-    _GNN_CLASSES_AVAILABLE = True
-except ImportError:
-    _GNN_CLASSES_AVAILABLE = False
-    # Create dummy classes for graceful fallback
-    class GNNTreeEncoder:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("GNN components require PyTorch and PyTorch Geometric")
-    
-    class GCNTreeEncoder:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("GNN components require PyTorch and PyTorch Geometric")
-    
-    class GATTreeEncoder:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("GNN components require PyTorch and PyTorch Geometric")
-    
-    class TreeToGraphConverter:
-        def __init__(self, *args, **kwargs):
-            raise ImportError("GNN components require PyTorch and PyTorch Geometric")
 
 __all__ = [
     # Core components - Clean architecture
-    "DataPreprocessor",
-    "PlanNode",
+    "DataPreprocessor", "PlanNode",
     "NodeEncoder",
-    "TreeEncoder",
-    "PredictionHead",
-    
-    # Factory functions - Clean architecture
-    "create_node_encoder",
-    "create_simple_node_encoder",
-    "create_large_node_encoder",
-    "create_tree_encoder",
-    
-    # GNN-specific classes (may raise ImportError if dependencies missing)
-    "GNNTreeEncoder",
-    "GCNTreeEncoder", 
-    "GATTreeEncoder",
     "TreeToGraphConverter",
+    "GATTreeEncoder",
+    "PredictionHead",
 ]
-
-# Package information
-def get_package_info() -> dict:
-    """Get information about the package and available components."""
-    return {
-        'version': '1.0.0',
-        'components': {
-            'DataPreprocessor': 'Convert raw JSON plans to structured trees',
-            'NodeEncoder': 'Encode plan nodes to numerical vectors using multi-view encoding',
-            'TreeEncoder': 'Aggregate node vectors using statistical or GNN methods',
-            'PredictionHead': 'Linear prediction head for final outputs'
-        },
-        'gnn_models': ['GCN', 'GAT']
-    }
-
-def print_package_info():
-    """Print package information."""
-    info = get_package_info()
-    print(f"GNTO Models Package v{info['version']}")
-
-    print("\nComponents:")
-    for name, desc in info['components'].items():
-        print(f"  {name}: {desc}")
-
