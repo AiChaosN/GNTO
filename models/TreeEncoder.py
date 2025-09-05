@@ -109,27 +109,38 @@ class GATTreeEncoder(nn.Module):
         # 图级输出投影
         self.output_proj = nn.Linear(in_dim, output_dim)
 
-    def _pool(self, x: torch.Tensor) -> torch.Tensor:
-        # 单图输入：直接对节点维度聚合
+    def _pool_batch(self, h, batch):
         if self.pooling == "mean":
-            return x.mean(dim=0, keepdim=False)
-        elif self.pooling == "max":
-            return x.max(dim=0, keepdim=False).values
-        elif self.pooling == "sum":
-            return x.sum(dim=0, keepdim=False)
+            return global_mean_pool(h, batch)  # [B, H*heads]
+        if self.pooling == "max":
+            return global_max_pool(h, batch)
+        return global_add_pool(h, batch)       # sum
 
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
+    def _pool_single(self, h):
+        # 单图时对 N 维做聚合；返回 [1, H*heads]，保持与 batch 版对齐
+        if self.pooling == "mean":
+            return h.mean(dim=0, keepdim=True)
+        if self.pooling == "max":
+            return h.max(dim=0, keepdim=True).values
+        return h.sum(dim=0, keepdim=True)
+
+    def forward(self, x: torch.Tensor, edge_index: torch.Tensor, batch: torch.Tensor | None = None) -> torch.Tensor:
         """
         x: [N, F_in]
         edge_index: [2, E]
-        return: [output_dim]
+        batch: [N] 或 None
+        return: [B, output_dim]    （若单图，B=1）
         """
         h = x
-        for i, conv in enumerate(self.convs):
-            h = conv(h, edge_index)        # [N, hidden*heads]
+        for conv in self.convs:
+            h = conv(h, edge_index)      # [N, hidden*heads]
             h = F.elu(h)
             h = F.dropout(h, p=self.dropout, training=self.training)
 
-        g = self._pool(h)                  # [hidden*heads]
-        out = self.output_proj(g)          # [output_dim]
+        if batch is None:
+            g = self._pool_single(h)     # [1, hidden*heads]
+        else:
+            g = self._pool_batch(h, batch)  # [B, hidden*heads]
+
+        out = self.output_proj(g)         # [B, output_dim]
         return out

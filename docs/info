@@ -63,4 +63,124 @@ Hash Cond 4 {'(mk.movie_id = t.id)', '(mc.movie_id = t.id)', '(mi.movie_id = t.i
 Parallel Aware 1 {False}
 Join Filter 5 {'(mi_idx.movie_id = t.id)', '(mc.movie_id = t.id)', '(t.id = mi.movie_id)', '(t.id = ci.movie_id)', '(ci.movie_id = t.id)'}
 Plan Rows 75935 [1048576, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-Scan Direction 1 {'Forward'}
+Bitmap Index ScanScan Direction 1 {'Forward'}
+
+
+
+
+#update 2025-09-05
+[Node Types] 13: ['Bitmap Heap Scan', 'Bitmap Index Scan', 'BitmapAnd', 'Gather', 'Gather Merge', 'Hash', 'Hash Join', 'Index Scan', 'Materialize', 'Merge Join', 'Nested Loop', 'Seq Scan', 'Sort']
+
+[Global MUST keys] 10: ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+
+[Global ALL keys] 41: ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Exact Heap Blocks', 'Filter', 'Hash Batches', 'Hash Buckets', 'Hash Cond', 'Index Cond', 'Index Name', 'Inner Unique', 'Join Filter', 'Join Type', 'Lossy Heap Blocks', 'Merge Cond', 'Node Type', 'Original Hash Batches', 'Original Hash Buckets', 'Parallel Aware', 'Parent Relationship', 'Peak Memory Usage', 'Plan Rows', 'Plan Width', 'Recheck Cond', 'Relation Name', 'Rows Removed by Filter', 'Rows Removed by Index Recheck', 'Rows Removed by Join Filter', 'Scan Direction', 'Single Copy', 'Sort Key', 'Sort Method', 'Sort Space Type', 'Sort Space Used', 'Startup Cost', 'Total Cost', 'Workers', 'Workers Launched', 'Workers Planned']
+
+[Per-key unique values] (sample if large)
+  - Actual Loops: 12749  sample: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  - Actual Rows: 139247  sample: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  - Actual Startup Time: 209032  sample: [0.25, 1.875, 0.625, 0.375, 0.75, 5.5, 4.5, 4.625, 8.5, 4.875]
+  - Actual Total Time: 320912  sample: [0.375, 0.125, 0.625, 0.5, 0.875, 0.25, 0.75, 4.5, 8.375, 1.625]
+  - Alias: 6  sample: ['ci', 'mi', 't', 'mk', 'mi_idx', 'mc']
+  - Exact Heap Blocks: 10880  sample: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  - Filter: 34772  sample: ['(company_id > 5124)', '(company_id < 83432)', '(company_id < 19823)', '(company_id > 2021)', '(keyword_id > 4304)', '(person_id > 2868441)', '((person_id > 3530400) AND (role_id > 1))', '(person_id > 2406278)', '(keyword_id > 4066)', '(company_id < 9994)']
+  - Hash Batches: 11  sample: [32, 1, 64, 128, 4, 256, 1024, 512, 8, 2, 16]
+  - Hash Buckets: 9  sample: [32768, 65536, 8192, 131072, 16384, 262144, 1024, 4096, 2048]
+  - Hash Cond: 21  sample: ['(mi.movie_id = ci.movie_id)', '(mi.movie_id = t.id)', '(mi_idx.movie_id = t.id)', '(t.id = ci.movie_id)', '(mk.movie_id = t.id)', '(mi.movie_id = mc.movie_id)', '(mk.movie_id = ci.movie_id)', '(mk.movie_id = mi_idx.movie_id)', '(mi_idx.movie_id = ci.movie_id)', '(mc.movie_id = ci.movie_id)', '(mc.movie_id = mi_idx.movie_id)', '(ci.movie_id = mi_idx.movie_id)', '(mk.movie_id = mc.movie_id)', '(mc.movie_id = t.id)', '(ci.movie_id = t.id)', '(ci.movie_id = mc.movie_id)', '(mi.movie_id = mk.movie_id)', '(mi_idx.movie_id = mc.movie_id)', '(t.id = mc.movie_id)', '(mi.movie_id = mi_idx.movie_id)', '(t.id = mi_idx.movie_id)']
+  - Index Cond: 23100  sample: ['(keyword_id > 19746)', '(keyword_id = 1324)', '(keyword_id > 14891)', '(keyword_id = 24731)', '(info_type_id > 90)', '(keyword_id > 40224)', '(company_id < 57)', '(keyword_id = 5308)', '(company_id < 735)', '(keyword_id = 40110)']
+  - Index Name: 14  sample: ['keyword_id_movie_keyword', 'kind_id_title', 'role_id_cast_info', 'company_id_movie_companies', 'info_type_id_movie_info_idx', 'company_type_id_movie_companies', 'movie_id_movie_info_idx', 'info_type_id_movie_info', 'movie_id_movie_keyword', 'movie_id_movie_companies', 'movie_id_movie_info', 'movie_id_cast_info', 'person_id_cast_info', 'title_pkey']
+  - Inner Unique: 2  sample: [False, True]
+  - Join Filter: 9  sample: ['(mc.movie_id = t.id)', '(mi.movie_id = t.id)', '(mi_idx.movie_id = t.id)', '(t.id = mk.movie_id)', '(t.id = mi.movie_id)', '(t.id = ci.movie_id)', '(ci.movie_id = t.id)', '(t.id = mc.movie_id)', '(t.id = mi_idx.movie_id)']
+  - Join Type: 1  sample: ['Inner']
+  - Lossy Heap Blocks: 1  sample: [0]
+  - Merge Cond: 8  sample: ['(mi_idx.movie_id = ci.movie_id)', '(t.id = ci.movie_id)', '(mk.movie_id = mi.movie_id)', '(t.id = mk.movie_id)', '(t.id = mi.movie_id)', '(mc.movie_id = t.id)', '(t.id = mc.movie_id)', '(t.id = mi_idx.movie_id)']
+  - Node Type: 13  sample: ['Hash', 'Materialize', 'Gather Merge', 'Bitmap Heap Scan', 'Bitmap Index Scan', 'Gather', 'BitmapAnd', 'Index Scan', 'Merge Join', 'Seq Scan', 'Sort', 'Hash Join', 'Nested Loop']
+  - Original Hash Batches: 11  sample: [32, 1, 64, 128, 4, 512, 256, 1024, 8, 2, 16]
+  - Original Hash Buckets: 9  sample: [32768, 65536, 16384, 131072, 8192, 1024, 4096, 262144, 2048]
+  - Parallel Aware: 2  sample: [False, True]
+  - Parent Relationship: 3  sample: ['Outer', 'Inner', 'Member']
+  - Peak Memory Usage: 2603  sample: [8192, 10, 13, 17, 21, 23, 27, 35, 48, 8256]
+  - Plan Rows: 141195  sample: [1048576, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  - Plan Width: 32  sample: [0, 131, 134, 136, 12, 146, 148, 25, 159, 161, 37, 40, 168, 42, 176, 180, 52, 54, 193, 65, 67, 74, 208, 210, 82, 86, 94, 99, 106, 114, 116, 119]
+  - Recheck Cond: 13632  sample: ['(person_id < 85411)', '(keyword_id > 77108)', '(company_id < 187)', '(company_id = 9749)', '(keyword_id = 42)', '(keyword_id > 19746)', '(keyword_id = 1324)', '(keyword_id = 669)', '(company_id < 1493)', '(keyword_id > 14891)']
+  - Relation Name: 6  sample: ['movie_keyword', 'movie_companies', 'title', 'movie_info', 'movie_info_idx', 'cast_info']
+  - Rows Removed by Filter: 34719  sample: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  - Rows Removed by Index Recheck: 1  sample: [0]
+  - Rows Removed by Join Filter: 1  sample: [0]
+  - Scan Direction: 1  sample: ['Forward']
+  - Single Copy: 1  sample: [False]
+  - Sort Key: 3  sample: ['["mk.movie_id"]', '["mi.movie_id"]', '["ci.movie_id"]']
+  - Sort Method: 3  sample: ['external sort', 'quicksort', 'external merge']
+  - Sort Space Type: 2  sample: ['Memory', 'Disk']
+  - Sort Space Used: 5  sample: [1888, 2464, 8912, 1465, 4026]
+  - Startup Cost: 73298  sample: [0.0, 131073.71, 262145.65, 3.25, 131075.88, 3.5, 262153.76, 131084.36, 524301.42, 131087.93]
+  - Total Cost: 149033  sample: [0.5, 1.75, 2.5, 3.75, 1.5, 0.75, 6.0, 2.0, 8.25, 2.25]
+  - Workers: 6  sample: ['[{"Sort Method": "quicksort", "Sort Space Type": "Memory", "Sort Space Used": 4026, "Worker Number": 0}, {"Sort Method": "quicksort", "Sort Space Type": "Memory", "Sort Space Used": 4026, "Worker Number": 1}]', '[]', '[{"Sort Method": "external merge", "Sort Space Type": "Disk", "Sort Space Used": 8912, "Worker Number": 0}, {"Sort Method": "external merge", "Sort Space Type": "Disk", "Sort Space Used": 8912, "Worker Number": 1}]', '[{"Sort Method": "quicksort", "Sort Space Type": "Memory", "Sort Space Used": 1465, "Worker Number": 0}, {"Sort Method": "quicksort", "Sort Space Type": "Memory", "Sort Space Used": 1465, "Worker Number": 1}]', '[{"Sort Method": "external sort", "Sort Space Type": "Disk", "Sort Space Used": 1888, "Worker Number": 0}, {"Sort Method": "external sort", "Sort Space Type": "Disk", "Sort Space Used": 1888, "Worker Number": 1}]', '[{"Sort Method": "quicksort", "Sort Space Type": "Memory", "Sort Space Used": 4078, "Worker Number": 0}, {"Sort Method": "quicksort", "Sort Space Type": "Memory", "Sort Space Used": 3950, "Worker Number": 1}]']
+  - Workers Launched: 2  sample: [1, 2]
+  - Workers Planned: 2  sample: [1, 2]
+
+[Per NodeType key stats]
+## Bitmap Heap Scan
+   must_all(16): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Exact Heap Blocks', 'Lossy Heap Blocks', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Recheck Cond', 'Relation Name', 'Rows Removed by Index Recheck', 'Startup Cost', 'Total Cost']
+   must_only_type(6): ['Alias', 'Exact Heap Blocks', 'Lossy Heap Blocks', 'Recheck Cond', 'Relation Name', 'Rows Removed by Index Recheck']
+   max(20): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Exact Heap Blocks', 'Filter', 'Lossy Heap Blocks', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Recheck Cond', 'Relation Name', 'Rows Removed by Filter', 'Rows Removed by Index Recheck', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(4): ['Filter', 'Parent Relationship', 'Rows Removed by Filter', 'Workers']
+## Bitmap Index Scan
+   must_all(13): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Index Cond', 'Index Name', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(3): ['Index Cond', 'Index Name', 'Parent Relationship']
+   max(14): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Index Cond', 'Index Name', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(1): ['Workers']
+## BitmapAnd
+   must_all(11): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(1): ['Parent Relationship']
+   max(12): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(1): ['Workers']
+## Gather
+   must_all(13): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Single Copy', 'Startup Cost', 'Total Cost', 'Workers Launched', 'Workers Planned']
+   must_only_type(3): ['Single Copy', 'Workers Launched', 'Workers Planned']
+   max(14): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Single Copy', 'Startup Cost', 'Total Cost', 'Workers Launched', 'Workers Planned']
+   optional(1): ['Parent Relationship']
+## Gather Merge
+   must_all(13): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers Launched', 'Workers Planned']
+   must_only_type(3): ['Parent Relationship', 'Workers Launched', 'Workers Planned']
+   max(13): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers Launched', 'Workers Planned']
+   optional(0): []
+## Hash
+   must_all(16): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Hash Batches', 'Hash Buckets', 'Node Type', 'Original Hash Batches', 'Original Hash Buckets', 'Parallel Aware', 'Parent Relationship', 'Peak Memory Usage', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(6): ['Hash Batches', 'Hash Buckets', 'Original Hash Batches', 'Original Hash Buckets', 'Parent Relationship', 'Peak Memory Usage']
+   max(17): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Hash Batches', 'Hash Buckets', 'Node Type', 'Original Hash Batches', 'Original Hash Buckets', 'Parallel Aware', 'Parent Relationship', 'Peak Memory Usage', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(1): ['Workers']
+## Hash Join
+   must_all(13): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Hash Cond', 'Inner Unique', 'Join Type', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(3): ['Hash Cond', 'Inner Unique', 'Join Type']
+   max(15): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Hash Cond', 'Inner Unique', 'Join Type', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(2): ['Parent Relationship', 'Workers']
+## Index Scan
+   must_all(14): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Index Name', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Relation Name', 'Scan Direction', 'Startup Cost', 'Total Cost']
+   must_only_type(4): ['Alias', 'Index Name', 'Relation Name', 'Scan Direction']
+   max(20): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Filter', 'Index Cond', 'Index Name', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Relation Name', 'Rows Removed by Filter', 'Rows Removed by Index Recheck', 'Scan Direction', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(6): ['Filter', 'Index Cond', 'Parent Relationship', 'Rows Removed by Filter', 'Rows Removed by Index Recheck', 'Workers']
+## Materialize
+   must_all(11): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(1): ['Parent Relationship']
+   max(12): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(1): ['Workers']
+## Merge Join
+   must_all(13): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Inner Unique', 'Join Type', 'Merge Cond', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(3): ['Inner Unique', 'Join Type', 'Merge Cond']
+   max(15): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Inner Unique', 'Join Type', 'Merge Cond', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(2): ['Parent Relationship', 'Workers']
+## Nested Loop
+   must_all(12): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Inner Unique', 'Join Type', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Startup Cost', 'Total Cost']
+   must_only_type(2): ['Inner Unique', 'Join Type']
+   max(16): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Inner Unique', 'Join Filter', 'Join Type', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Rows Removed by Join Filter', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(4): ['Join Filter', 'Parent Relationship', 'Rows Removed by Join Filter', 'Workers']
+## Seq Scan
+   must_all(12): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Node Type', 'Parallel Aware', 'Plan Rows', 'Plan Width', 'Relation Name', 'Startup Cost', 'Total Cost']
+   must_only_type(2): ['Alias', 'Relation Name']
+   max(16): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Alias', 'Filter', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Relation Name', 'Rows Removed by Filter', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(4): ['Filter', 'Parent Relationship', 'Rows Removed by Filter', 'Workers']
+## Sort
+   must_all(16): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Sort Key', 'Sort Method', 'Sort Space Type', 'Sort Space Used', 'Startup Cost', 'Total Cost', 'Workers']
+   must_only_type(6): ['Parent Relationship', 'Sort Key', 'Sort Method', 'Sort Space Type', 'Sort Space Used', 'Workers']
+   max(16): ['Actual Loops', 'Actual Rows', 'Actual Startup Time', 'Actual Total Time', 'Node Type', 'Parallel Aware', 'Parent Relationship', 'Plan Rows', 'Plan Width', 'Sort Key', 'Sort Method', 'Sort Space Type', 'Sort Space Used', 'Startup Cost', 'Total Cost', 'Workers']
+   optional(0): []
