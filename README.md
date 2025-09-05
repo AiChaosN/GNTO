@@ -4,7 +4,7 @@ GNTO是一个基于机器学习的查询优化框架，专注于查询计划的�
 
 ## 项目概述
 
-GNTO采用分层架构设计，将查询优化分解为多个独立的组件，每个组件都有清晰的职责分工。目前我将真个项目分为四大模块.
+GNTO采用分层架构设计，将查询优化分解为多个独立的组件，每个组件都有清晰的职责分工。目前我将这个项目分为四大模块.
 
 ## 项目结构
 
@@ -51,7 +51,29 @@ PlanNode(
 ```
 
 #### 2. NodeEncoder - 节点级编码
-该模块主要就是将PlanNode的extra_info编码为node_vector,这个编码的结果将会作为TreeEncoder的输入.
+##### 1. 对离散型特征构建词表
+首先将离散型特征构建词表,目前构建此表如下:
+```python
+{
+    "node_type": {
+        "Seq Scan": 0,
+        "Hash Join": 1,
+        "Merge Join": 2,
+    }
+}
+```
+构建完成后,需要将node_type的值映射到词表中,然后进行Embedding编码:
+```python
+nn.Embedding(num_categories, d)
+```
+
+##### 2. 对连续性特征进行进行log标准化
+由于大部分特征数值差异较大,所以需要进行log标准化,目前标准化如下:
+```python
+log1p(torch.tensor(stats_values))
+```
+
+以上就是对于不同数据类型的处理方式.该模块主要就是将PlanNode的extra_info编码为node_vector,这个编码的结果将会作为TreeEncoder的输入.
 而这也是整个项目中最重要的部分,因为后续的预测结果的好坏,很大程度上取决于这个编码的结果.
 
 **分块编码策略**:

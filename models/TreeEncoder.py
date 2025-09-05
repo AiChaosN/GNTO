@@ -7,15 +7,13 @@ from torch_geometric.nn import GATConv
 
 import numpy as np
 
+# 将PlanNode转换为Graph
 class TreeToGraphConverter:
     def __init__(self, encoder=None, bidirectional=True):
         self.encoder = encoder
         self.bidirectional = bidirectional
 
     def tree_to_graph(self, root):
-        import numpy as np
-        import torch
-
         nodes, edges = [], []
 
         def dfs(node, parent_idx):
@@ -62,7 +60,7 @@ class TreeToGraphConverter:
 
 
 
-
+# 使用GAT模型进行编码
 class GATTreeEncoder(nn.Module):
     """
     图级表示的 GAT 编码器：
@@ -98,7 +96,7 @@ class GATTreeEncoder(nn.Module):
             layers.append(GATConv(in_dim, out_dim_each_head, heads=num_heads, concat=True, dropout=dropout))
             in_dim = out_dim_each_head * num_heads
 
-        # 最后一层（仍然做 GATConv，保持 concat=True；也可以设 concat=False 改为平均头）
+        # 最后一层
         if num_layers >= 2:
             layers.append(GATConv(in_dim, out_dim_each_head, heads=num_heads, concat=True, dropout=dropout))
             in_dim = out_dim_each_head * num_heads

@@ -16,25 +16,13 @@ import numpy as np
 
 @dataclass
 class PlanNode:
-    """A minimal tree node used throughout the modelling pipeline.
-
-    Parameters
-    ----------
-    node_type:
-        Name of the plan node, e.g. ``Seq Scan`` or ``Hash Join``.
-    children:
-        Child nodes in the execution plan tree.
-    extra_info:
-        Additional key/value pairs describing the node.  The preprocessor keeps
-        them untouched so that downstream components can decide what to use.
-    node_vector:
-        Node vector (encoded features)
-    """
-
     node_type: str
     children: List["PlanNode"] = field(default_factory=list)
     extra_info: Dict[str, Any] = field(default_factory=dict)
     node_vector: Optional[np.ndarray] = None
+
+    def getExtraInfo(self) -> Dict[str, Any]:
+        return self.extra_info
 
 
 class DataPreprocessor:
@@ -70,53 +58,14 @@ class DataPreprocessor:
     
     # 下面是树可视化函数 两个函数 display_tree 和 get_tree_stats ------------------------------------------------
     def display_tree(self, node: PlanNode, show_details: bool = True, max_depth: int = None) -> str:
-        """Display the tree structure in a readable format.
-        
-        Parameters
-        ----------
-        node:
-            The root PlanNode to display
-        show_details:
-            Whether to show detailed information for each node
-        max_depth:
-            Maximum depth to display (None for unlimited)
-            
-        Returns
-        -------
-        str:
-            Formatted string representation of the tree
-        """
         lines = []
         self._build_tree_lines(node, lines, "", True, show_details, 0, max_depth)
         return "\n".join(lines)
     
     def print_tree(self, node: PlanNode, show_details: bool = True, max_depth: int = None):
-        """Print the tree structure to console.
-        
-        Parameters
-        ----------
-        node:
-            The root PlanNode to display
-        show_details:
-            Whether to show detailed information for each node
-        max_depth:
-            Maximum depth to display (None for unlimited)
-        """
         print(self.display_tree(node, show_details, max_depth))
     
     def get_tree_stats(self, node: PlanNode) -> Dict[str, Any]:
-        """Get statistics about the tree structure.
-        
-        Parameters
-        ----------
-        node:
-            The root PlanNode to analyze
-            
-        Returns
-        -------
-        Dict[str, Any]:
-            Dictionary containing tree statistics
-        """
         stats = {
             'total_nodes': 0,
             'max_depth': 0,
@@ -132,7 +81,6 @@ class DataPreprocessor:
     
     def _build_tree_lines(self, node: PlanNode, lines: List[str], prefix: str, 
                          is_last: bool, show_details: bool, current_depth: int, max_depth: int):
-        """Recursively build lines for tree visualization."""
         
         # Check depth limit
         if max_depth is not None and current_depth > max_depth:

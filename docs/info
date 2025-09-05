@@ -1,0 +1,66 @@
+每个plan必有的key 和所有的key种类
+keys_set: 30 {'Plan Width', 'Actual Rows', 'Index Name', 'Filter', 'Actual Loops', 'Alias', 'Actual Total Time', 'Single Copy', 'Node Type', 'Index Cond', 'Recheck Cond', 'Rows Removed by Index Recheck', 'Total Cost', 'Relation Name', 'Rows Removed by Filter', 'Inner Unique', 'Startup Cost', 'Actual Startup Time', 'Merge Cond', 'Lossy Heap Blocks', 'Exact Heap Blocks', 'Join Type', 'Workers Planned', 'Rows Removed by Join Filter', 'Workers Launched', 'Hash Cond', 'Parallel Aware', 'Join Filter', 'Plan Rows', 'Scan Direction'}
+must_have_keys: 10 {'Plan Width', 'Actual Total Time', 'Total Cost', 'Node Type', 'Actual Rows', 'Startup Cost', 'Actual Startup Time', 'Actual Loops', 'Parallel Aware', 'Plan Rows'}
+
+每个node_type所必有的key:
+Bitmap Heap Scan 18 {'Plan Width', 'Actual Total Time', 'Total Cost', 'Relation Name', 'Node Type', 'Rows Removed by Filter', 'Actual Rows', 'Plan Rows', 'Recheck Cond', 'Startup Cost', 'Actual Startup Time', 'Rows Removed by Index Recheck', 'Actual Loops', 'Exact Heap Blocks', 'Lossy Heap Blocks', 'Filter', 'Parallel Aware', 'Alias'}
+Gather 13 {'Plan Width', 'Actual Total Time', 'Workers Planned', 'Total Cost', 'Workers Launched', 'Single Copy', 'Node Type', 'Actual Rows', 'Startup Cost', 'Actual Startup Time', 'Actual Loops', 'Parallel Aware', 'Plan Rows'}
+Hash Join 13 {'Plan Width', 'Actual Total Time', 'Total Cost', 'Node Type', 'Actual Rows', 'Inner Unique', 'Startup Cost', 'Actual Startup Time', 'Join Type', 'Actual Loops', 'Hash Cond', 'Parallel Aware', 'Plan Rows'}
+Index Scan 18 {'Plan Width', 'Actual Total Time', 'Total Cost', 'Relation Name', 'Node Type', 'Index Cond', 'Actual Rows', 'Rows Removed by Filter', 'Index Name', 'Plan Rows', 'Startup Cost', 'Actual Startup Time', 'Rows Removed by Index Recheck', 'Actual Loops', 'Filter', 'Parallel Aware', 'Alias', 'Scan Direction'}
+Nested Loop 14 {'Plan Width', 'Actual Total Time', 'Rows Removed by Join Filter', 'Total Cost', 'Node Type', 'Actual Rows', 'Inner Unique', 'Startup Cost', 'Actual Startup Time', 'Join Type', 'Actual Loops', 'Parallel Aware', 'Join Filter', 'Plan Rows'}
+Seq Scan 14 {'Plan Width', 'Actual Total Time', 'Total Cost', 'Relation Name', 'Node Type', 'Rows Removed by Filter', 'Actual Rows', 'Plan Rows', 'Startup Cost', 'Actual Startup Time', 'Filter', 'Actual Loops', 'Parallel Aware', 'Alias'}
+Merge Join 13 {'Plan Width', 'Actual Total Time', 'Total Cost', 'Node Type', 'Actual Rows', 'Inner Unique', 'Startup Cost', 'Actual Startup Time', 'Merge Cond', 'Join Type', 'Actual Loops', 'Parallel Aware', 'Plan Rows'}
+
+
+各自nodetype独有的key:
+Bitmap Heap Scan 6 {'Relation Name', 'Recheck Cond', 'Rows Removed by Index Recheck', 'Exact Heap Blocks', 'Lossy Heap Blocks', 'Alias'}
+Gather 3 {'Workers Planned', 'Workers Launched', 'Single Copy'}
+Hash Join 3 {'Inner Unique', 'Join Type', 'Hash Cond'}
+Index Scan 6 {'Relation Name', 'Index Cond', 'Index Name', 'Rows Removed by Index Recheck', 'Alias', 'Scan Direction'}
+Nested Loop 2 {'Inner Unique', 'Join Type'}
+Seq Scan 4 {'Relation Name', 'Rows Removed by Filter', 'Filter', 'Alias'}
+Merge Join 3 {'Inner Unique', 'Merge Cond', 'Join Type'}
+
+主观筛选出所有node共有的key:
+{'Plan Width', 'Node Type', 'Plan Rows'}
+
+主观筛选出的不同nodetype有用的key:
+Bitmap Heap Scan 6 {'Relation Name', 'Recheck Cond'}
+Gather 3 {'Workers Planned', 'Workers Launched'}
+Hash Join 3 {'Inner Unique', 'Hash Cond'}
+Index Scan 6 {'Relation Name', 'Index Cond', 'Index Name'}
+Nested Loop 2 {'Inner Unique'}
+Seq Scan 4 {'Relation Name', 'Filter'}
+Merge Join 3 {'Inner Unique', 'Merge Cond'}
+
+每个key的value种类 (取10个):
+Plan Width 21 [131, 134, 136, 12, 146, 148, 25, 159, 161, 40]
+Actual Rows 75922 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Index Name 5 {'company_id_movie_companies', 'role_id_cast_info', 'info_type_id_movie_info_idx', 'company_type_id_movie_companies', 'person_id_cast_info'}
+Filter 11749 ['(keyword_id < 6356)', '(company_id > 27455)', '(person_id < 2748759)', '(keyword_id > 2652)', '(company_id > 917)', '(person_id > 655549)', '(person_id < 338670)', '(person_id < 347491)', '(keyword_id > 3580)', '(person_id < 3966743)']
+Actual Loops 1 {1}
+Alias 6 {'mi_idx', 't', 'ci', 'mc', 'mk', 'mi'}
+Actual Total Time 89122 [0.5, 0.75, 0.25, 3.125, 1.875, 5.25, 1.25, 0.125, 8.375, 8.25]
+Single Copy 1 {False}
+Node Type 7 {'Bitmap Heap Scan', 'Merge Join', 'Hash Join', 'Seq Scan', 'Index Scan', 'Gather', 'Nested Loop'}
+Index Cond 4875 ['(person_id = 2747465)', '(person_id < 465308)', '(person_id = 1172303)', '(company_id = 20794)', '(person_id = 82779)', '(company_id = 992)', '(company_id = 18631)', '(person_id = 965648)', '(person_id < 515315)', '(person_id = 577119)']
+Recheck Cond 7826 ['(keyword_id < 398)', '(keyword_id > 8396)', '(keyword_id > 55591)', '(keyword_id = 2146)', '(company_id > 81952)', '(keyword_id > 6708)', '(keyword_id > 29318)', '(keyword_id > 48879)', '(company_id < 463)', '(keyword_id > 8494)']
+Rows Removed by Index Recheck 1 {0}
+Total Cost 71750 [131073.11, 3145730.84, 262147.18, 262148.98, 2097157.44, 131081.06, 131082.93, 262155.83, 786445.43, 262158.46]
+Relation Name 6 {'title', 'movie_keyword', 'movie_info_idx', 'movie_info', 'movie_companies', 'cast_info'}
+Rows Removed by Filter 12930 [0, 1, 2, 3, 4, 5, 6, 7, 8, 7995400]
+Inner Unique 2 {False, True}
+Startup Cost 31419 [0.0, 3.25, 262153.76, 262175.04, 262178.52, 262186.28, 43.69, 43.94, 44.0, 44.25]
+Actual Startup Time 65268 [0.75, 0.25, 0.5, 0.875, 1.875, 0.375, 2.125, 7.5, 3.125, 5.0]
+Merge Cond 5 {'(t.id = mc.movie_id)', '(mc.movie_id = t.id)', '(t.id = mk.movie_id)', '(t.id = mi.movie_id)', '(t.id = mi_idx.movie_id)'}
+Lossy Heap Blocks 1 {0}
+Exact Heap Blocks 3380 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+Join Type 1 {'Inner'}
+Workers Planned 2 {1, 2}
+Rows Removed by Join Filter 1 {0}
+Workers Launched 2 {1, 2}
+Hash Cond 4 {'(mk.movie_id = t.id)', '(mc.movie_id = t.id)', '(mi.movie_id = t.id)', '(ci.movie_id = t.id)'}
+Parallel Aware 1 {False}
+Join Filter 5 {'(mi_idx.movie_id = t.id)', '(mc.movie_id = t.id)', '(t.id = mi.movie_id)', '(t.id = ci.movie_id)', '(ci.movie_id = t.id)'}
+Plan Rows 75935 [1048576, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Scan Direction 1 {'Forward'}

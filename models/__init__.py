@@ -9,7 +9,7 @@ from .DataPreprocessor import DataPreprocessor, PlanNode
 from .NodeEncoder import NodeEncoder
 from .TreeEncoder import TreeToGraphConverter, GATTreeEncoder
 from .PredictionHead import PredictionHead
-
+from .Utils import *
 __all__ = [
     # Core components - Clean architecture
     "DataPreprocessor", "PlanNode",
@@ -17,4 +17,5 @@ __all__ = [
     "TreeToGraphConverter",
     "GATTreeEncoder",
     "PredictionHead",
+    "Utils",
 ]
