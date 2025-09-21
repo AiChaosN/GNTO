@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional
 import numpy as np
+import pandas as pd
+import re
 
 
 @dataclass
@@ -162,3 +164,88 @@ class DataPreprocessor:
                 self._collect_tree_stats(child, stats, depth + 1)
         else:
             stats['leaf_nodes'] += 1
+
+
+#####################
+# 多个 Cond 解析    #
+#####################
+_ID = r'(?:[`"]?[A-Za-z_][\w$]*[`"]?(?:\s*\.\s*[`"]?[A-Za-z_][\w$]*[`"]?)*)'
+_OP = r'(=|!=|<>|<=|>=|<|>)'
+# 右值尽量宽松，后面再判定其类型
+_PATTERN = re.compile(rf'^\s*({_ID})\s*{_OP}\s*(.+?)\s*$')
+
+def _strip_quotes(s: str) -> str:
+    s = s.strip()
+    if (s.startswith("'") and s.endswith("'")) or (s.startswith('"') and s.endswith('"')):
+        return s[1:-1]
+    if s.startswith('`') and s.endswith('`'):
+        return s[1:-1]
+    return s
+
+def _parse_rhs(val: str):
+    v = val.strip()
+    # 字符串字面量
+    if (v[:1] in "'\"`" and v[-1:] in "'\"`") and len(v) >= 2:
+        return _strip_quotes(v)
+    # 数字（int/float）
+    try:
+        if re.fullmatch(r'[+-]?\d+', v):
+            return int(v)
+        if re.fullmatch(r'[+-]?\d*\.\d+', v):
+            return float(v)
+    except ValueError:
+        pass
+    # 列标识符（含点号）
+    ident = re.sub(r'\s+', '', v)  # 去掉点号两侧多余空格
+    return _strip_quotes(ident)
+
+def parse_conditions(expr: str):
+    """
+    将形如：
+      ((kind_id > 1) AND (production_year > 1998) AND (mi.movie_id = ci.movie_id) AND (name != "Tom"))
+    解析为：
+      [['kind_id','>',1], ['production_year','>',1998], ['mi.movie_id','=', 'ci.movie_id'], ['name','!=','Tom']]
+    """
+    s = expr.strip()
+    # 去一层最外括号（可选）
+    if s.startswith("(") and s.endswith(")"):
+        s = s[1:-1].strip()
+
+    # 按 AND 拆分（忽略大小写，且不处理字符串中的 AND——一般足够）
+    parts = re.split(r'\s+AND\s+', s, flags=re.IGNORECASE)
+
+    out = []
+    for p in parts:
+        seg = p.strip()
+        # 去掉包裹的小括号
+        if seg.startswith("(") and seg.endswith(")"):
+            seg = seg[1:-1].strip()
+
+        m = _PATTERN.match(seg)
+        if not m:
+            raise ValueError(f"无法解析条件: {seg}")
+        lhs, op, rhs = m.groups()
+        lhs = _strip_quotes(lhs).replace(' ', '')   # 统一去掉点号周围空格
+        rhs = _parse_rhs(rhs)
+        out.append([lhs, op, rhs])
+    return out
+
+
+def safe_cond_parse(expr):
+    if pd.isna(expr):  # 处理 NaN
+        return []
+    try:
+        return parse_conditions(str(expr))
+    except Exception as e:
+        print(f"解析失败: {expr}, 错误: {e}")
+        return []
+
+
+#####################
+# 测试              #
+#####################
+if __name__ == "__main__":
+
+    # 多个 Cond 解析示例
+    print("多个 Cond 解析示例")
+    print(parse_conditions("((kind_id > 1) AND (production_year > 1998) AND (mi.movie_id = cimovie_id))"))
