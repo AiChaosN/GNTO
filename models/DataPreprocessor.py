@@ -10,11 +10,12 @@ turns nested dictionaries that resemble PostgreSQL's ``EXPLAIN`` output into
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import re
-
+import glob
+import json
 
 @dataclass
 class PlanNode:
@@ -165,6 +166,77 @@ class DataPreprocessor:
         else:
             stats['leaf_nodes'] += 1
 
+#####################
+# PlanNode 转 图    #
+#####################
+def plan_trees_to_graphs(
+    plan_roots: List,
+    add_self_loops: bool = False,
+    undirected: bool = False,
+) -> Tuple[List[List[Tuple[int, int]]], List[List[Any]]]:
+    graphs_edges: List[List[Tuple[int, int]]] = []
+    graphs_nodes: List[List[Any]] = []
+
+    for root in plan_roots:
+        edges: List[Tuple[int, int]] = []
+        nodes: List[Any] = []
+
+        def dfs(node, parent_idx: int | None):
+            idx = len(nodes)
+            nodes.append(getattr(node, "extra_info", None))
+
+            if add_self_loops:
+                edges.append((idx, idx))
+
+            if parent_idx is not None:
+                edges.append((parent_idx, idx))
+                if undirected:
+                    edges.append((idx, parent_idx))
+
+            # 安全访问 children
+            for ch in getattr(node, "children", []) or []:
+                dfs(ch, idx)
+
+        dfs(root, None)
+        graphs_edges.append(edges)
+        graphs_nodes.append(nodes)
+
+    return graphs_edges, graphs_nodes
+
+#####################
+# 图 转 DataFrame  #
+#####################
+def plans_to_df(data: list[list[dict]]) -> pd.DataFrame:
+    rows = []
+    for pid, plan in enumerate(data):
+        for nid, node in enumerate(plan):
+            rows.append({"plan_id": pid, "node_idx": nid, **node})
+    df = pd.json_normalize(rows, sep='.')
+
+    df = df.sort_values(["plan_id", "node_idx"], kind="stable").reset_index(drop=True)
+    return df
+
+
+#####################
+# DataFrame 转 图  #
+#####################
+def df_to_plans(df: pd.DataFrame, keep_extra_cols=False) -> list[list[dict]]:
+    orig_cols = [c for c in df.columns if c not in {"plan_id", "node_idx"}]
+    cols = orig_cols if not keep_extra_cols else [c for c in df.columns if c not in {"plan_id", "node_idx"}]
+
+    out = []
+    for pid, g in df.sort_values(["plan_id","node_idx"], kind="stable").groupby("plan_id", sort=True):
+        plan_nodes = []
+        for _, row in g.sort_values("node_idx", kind="stable").iterrows():
+            d = {}
+            for k in cols:
+                v = row[k]
+                if v is None or []:
+                    continue
+                d[k] = v
+            plan_nodes.append(d)
+        out.append(plan_nodes)
+    return out
 
 #####################
 # 多个 Cond 解析    #
@@ -229,7 +301,6 @@ def parse_conditions(expr: str):
         rhs = _parse_rhs(rhs)
         out.append([lhs, op, rhs])
     return out
-
 
 def safe_cond_parse(expr):
     if pd.isna(expr):  # 处理 NaN
