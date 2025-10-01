@@ -7,57 +7,6 @@ from torch_geometric.nn import GATConv, global_mean_pool, global_max_pool, globa
 
 import numpy as np
 
-# 将PlanNode转换为Graph
-class TreeToGraphConverter:
-    def __init__(self, encoder=None, bidirectional=True):
-        self.encoder = encoder
-        self.bidirectional = bidirectional
-
-    def tree_to_graph(self, root):
-        nodes, edges = [], []
-
-        def dfs(node, parent_idx):
-            idx = len(nodes)
-            nodes.append(node)
-            if parent_idx is not None:
-                edges.append((parent_idx, idx))
-                if self.bidirectional:
-                    edges.append((idx, parent_idx))
-            for ch in node.children:
-                dfs(ch, idx)
-
-        dfs(root, None)
-
-        # 1) 正确地先取 vec
-        feats_list = []
-        for n in nodes:
-            if self.encoder is not None:
-                vec = self.encoder.encode_node(n)
-            else:
-                if n.node_vector is None:
-                    raise ValueError("某些节点缺少 node_vector；请先填充或提供 encoder。")
-                vec = n.node_vector
-
-            # 2) 统一为 numpy.float32（你的 _process_tree 里按 numpy 处理）
-            if isinstance(vec, torch.Tensor):
-                vec = vec.detach().cpu().numpy()
-            else:
-                vec = np.asarray(vec)
-            feats_list.append(vec.astype(np.float32))
-
-        # 3) edge_index
-        if edges:
-            edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
-        else:
-            edge_index = torch.empty((2, 0), dtype=torch.long)
-
-
-        feats_list = torch.stack(
-            [torch.as_tensor(f, dtype=torch.float32) for f in feats_list],
-            dim=0
-        )
-        return edge_index, feats_list
-
 # TreeEncoder_GATMini
 class TreeEncoder_GATMini(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, heads1=8, drop=0.6):
