@@ -44,7 +44,6 @@ def build_dataset(res, edges_list, execution_times, in_dim=16, bidirectional=Fal
         data_list.append(Data(x=x_plan, edge_index=ei_like, y=y))
     return data_list
 
-
 # 早停机制
 class EarlyStopping:
     def __init__(self, patience=15, min_delta=0, restore_best_weights=True):
