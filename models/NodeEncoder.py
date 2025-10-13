@@ -18,6 +18,24 @@ def default_emb_dim(cardinality: int, max_dim: int = 64) -> int:
     d = min(max_dim, d)
     return d
 
+# 谓词编码器 6个操作符每个操作符4维,2个列每个16维,1个常量1维,1个flag1维,输出32维
+class PredicateEncoder(nn.Module):
+    def __init__(self, op_num=6, col_dim=16, const_dim=1, out_dim=16):
+        super().__init__()
+        self.op_emb = nn.Embedding(op_num, 3)
+        self.mlp = nn.Sequential(
+            nn.Linear(col_dim + const_dim + 3 + 1, 16),  # +1是filter/join flag
+            nn.ReLU(),
+            nn.Linear(16, out_dim)
+        )
+
+    def forward(self, v_col1, op_id, v_col2_or_const, is_join):
+        op_vec = self.op_emb(op_id)
+        type_flag = is_join.float().unsqueeze(-1)
+        x = torch.cat([v_col1, v_col2_or_const, op_vec, type_flag], dim=-1)
+        return self.mlp(x)
+
+
 class NodeEncoder_Mini(nn.Module):
     """
     简单的节点编码器
