@@ -16,6 +16,7 @@ import pandas as pd
 import re
 import glob
 import json
+import math
 
 @dataclass
 class PlanNode:
@@ -498,6 +499,115 @@ def safe_cond_parse(expr):
     except Exception as e:
         print(f"解析失败: {expr}, 错误: {e}")
         return []
+
+
+########################################################
+# 从 db_info 处理谓词列表
+########################################################
+# 操作符映射
+OP_DICT = {"=":0, ">":1, ">=":2, "<":3, "<=":4}
+
+def _build_maps(db_info: pd.DataFrame):
+    df = db_info.copy()
+    if "name" not in df.columns and {"table_name","column_name"}.issubset(df.columns):
+        df["name"] = df["table_name"].astype(str) + "." + df["column_name"].astype(str)
+
+    # full -> id（稳定：按字典序）
+    full_sorted = sorted(df["name"].astype(str).tolist())
+    full2id = {f:i for i,f in enumerate(full_sorted)}
+
+    # (alias/bare) 反查辅助：bare -> 所有 full（可能多表同名列）
+    col_to_fulls = {}
+    for _, r in df.iterrows():
+        full = str(r["name"])
+        bare = full.split(".")[-1]
+        col_to_fulls.setdefault(bare, []).append(full)
+
+    # 元信息
+    def _f(x):
+        try: return float(x)
+        except: return None
+    meta = {str(r["name"]): {"min":_f(r["min"]), "max":_f(r["max"])} for _, r in df.iterrows()}
+
+    return full2id, col_to_fulls, meta
+
+def _resolve_col(token: str, default_alias: Optional[str], full2id, col_to_fulls) -> Optional[int]:
+    """
+    解析列名优先级：
+    1) 已带别名：'t.id' 直接匹配
+    2) 裸列名 + 行别名：尝试 f'{Alias}.{col}'
+    3) 裸列名且在 db_info 唯一：用该唯一列
+    否则返回 None（歧义）
+    """
+    s = str(token)
+    if "." in s and s in full2id:
+        return full2id[s]
+
+    bare = s
+    if default_alias:
+        cand = f"{default_alias}.{bare}"
+        if cand in full2id:
+            return full2id[cand]
+
+    fulls = col_to_fulls.get(bare, [])
+    if len(fulls) == 1:
+        return full2id[fulls[0]]
+
+    return None  # 歧义或不存在
+
+def _to_num(x: Any) -> Optional[float]:
+    if isinstance(x, (int, float)): return float(x)
+    if isinstance(x, str):
+        try: return float(x.strip())
+        except: return None
+    return None
+
+def _scale01(v: float, vmin: Optional[float], vmax: Optional[float]) -> float:
+    if vmin is None or vmax is None or vmax <= vmin or math.isnan(v): return 0.0
+    t = (v - vmin) / (vmax - vmin)
+    return 0.0 if t < 0 else (1.0 if t > 1 else float(t))
+
+def process_predicate_list(
+    predicate_list: List[List[Any]],
+    db_info: pd.DataFrame,
+    default_alias: Optional[str] = None,
+    op_dict: Dict[str,int] = OP_DICT
+) -> List[Tuple[int, int, Any, bool]]:
+    """
+    输入：一行的 predicate_list（如 [['id','=',3], ['t.id','=','mk.movie_id']]）
+    输出：[(lhs_col_id, op_id, rhs_value, is_join), ...]
+         is_join=True → rhs_value 为列 id；False → rhs_value 为 [0,1] 浮点
+    """
+    full2id, col_to_fulls, meta = _build_maps(db_info)
+    out = []
+    for trip in predicate_list or []:
+        if not isinstance(trip, (list, tuple)) or len(trip) < 3:
+            continue
+        lhs, op, rhs = trip[0], str(trip[1]), trip[2]
+        if op not in op_dict:
+            raise KeyError(f"未知操作符: {op}")
+
+        lhs_id = _resolve_col(lhs, default_alias, full2id, col_to_fulls)
+        if lhs_id is None:
+            raise KeyError(f"无法解析 lhs 列名（需要别名）：{lhs}，行别名={default_alias}")
+
+        # 尝试把 rhs 当数字
+        rhs_num = _to_num(rhs)
+        if rhs_num is not None:
+            # 用 lhs 的 min/max 进行缩放
+            # 找出 lhs 的 full 名字来取元信息
+            # 反查 full 名称：
+            lhs_full = [k for k,v in full2id.items() if v == lhs_id][0]
+            vmin = meta[lhs_full]["min"]; vmax = meta[lhs_full]["max"]
+            rhs_scaled = _scale01(rhs_num, vmin, vmax)
+            out.append((lhs_id, op_dict[op], rhs_scaled, False))
+        else:
+            # rhs 当作列名解析（可带别名；如裸列且无别名，默认也尝试用同一 default_alias）
+            rhs_id = _resolve_col(rhs, default_alias, full2id, col_to_fulls)
+            if rhs_id is None:
+                raise KeyError(f"无法解析 rhs 列名：{rhs}（请在谓词中带别名或提供唯一列）")
+            out.append((lhs_id, op_dict[op], rhs_id, True))
+    return out
 
 
 #####################
