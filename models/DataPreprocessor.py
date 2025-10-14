@@ -531,7 +531,7 @@ def _build_maps(db_info: pd.DataFrame):
 
     return full2id, col_to_fulls, meta
 
-def _resolve_col(token: str, default_alias: Optional[str], full2id, col_to_fulls) -> Optional[int]:
+def _resolve_col(token: str, default_alias: Optional[str], full2id, col_to_fulls, index_name: Optional[str] = None) -> Optional[int]:
     """
     解析列名优先级：
     1) 已带别名：'t.id' 直接匹配
@@ -548,7 +548,17 @@ def _resolve_col(token: str, default_alias: Optional[str], full2id, col_to_fulls
         cand = f"{default_alias}.{bare}"
         if cand in full2id:
             return full2id[cand]
-
+    if index_name:
+        index_name_str = index_name[len(bare):].split("_")[1:]
+        index_name_head = ""
+        print(f"index_name_str: {index_name_str}")
+        for i in range(2):
+            index_name_head += index_name_str[i][0]
+        if len(index_name_str) > 2:
+            index_name_head += "_" + index_name_str[-1]
+        cand = f"{index_name_head}.{bare}"
+        if cand in full2id:
+            return full2id[cand]
     fulls = col_to_fulls.get(bare, [])
     if len(fulls) == 1:
         return full2id[fulls[0]]
@@ -571,6 +581,7 @@ def process_predicate_list(
     predicate_list: List[List[Any]],
     db_info: pd.DataFrame,
     default_alias: Optional[str] = None,
+    index_name: Optional[str] = None,
     op_dict: Dict[str,int] = OP_DICT
 ) -> List[Tuple[int, int, Any, bool]]:
     """
@@ -587,9 +598,9 @@ def process_predicate_list(
         if op not in op_dict:
             raise KeyError(f"未知操作符: {op}")
 
-        lhs_id = _resolve_col(lhs, default_alias, full2id, col_to_fulls)
+        lhs_id = _resolve_col(lhs, default_alias, full2id, col_to_fulls, index_name)
         if lhs_id is None:
-            raise KeyError(f"无法解析 lhs 列名（需要别名）：{lhs}，行别名={default_alias}")
+            raise KeyError(f"无法解析 lhs 列名（需要别名）：{lhs}，行别名={default_alias}, 索引名={index_name}")
 
         # 尝试把 rhs 当数字
         rhs_num = _to_num(rhs)
@@ -603,7 +614,7 @@ def process_predicate_list(
             out.append((lhs_id, op_dict[op], rhs_scaled, False))
         else:
             # rhs 当作列名解析（可带别名；如裸列且无别名，默认也尝试用同一 default_alias）
-            rhs_id = _resolve_col(rhs, default_alias, full2id, col_to_fulls)
+            rhs_id = _resolve_col(rhs, default_alias, full2id, col_to_fulls, index_name)
             if rhs_id is None:
                 raise KeyError(f"无法解析 rhs 列名：{rhs}（请在谓词中带别名或提供唯一列）")
             out.append((lhs_id, op_dict[op], rhs_id, True))
