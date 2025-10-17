@@ -18,30 +18,62 @@ def coerce_edge_index(ei_like):
         raise ValueError(f"edge_index 需为 [2,E] 或 [E,2]，拿到 {tuple(ei.shape)}")
     return ei.contiguous()
 
-def build_dataset(res, edges_list, execution_times, in_dim=16, bidirectional=False):
-    assert len(res) == len(edges_list) == len(execution_times), "长度必须一致"
+def build_dataset(plans, edges_list, execution_times, in_dim=15, bidirectional=False, max_len=3):
+    assert len(plans) == len(edges_list) == len(execution_times), "长度必须一致"
     data_list = []
-    for i, (x_plan, ei_like, y) in enumerate(zip(res, edges_list, execution_times)):
+    for i, (x_plan, edge_index, y) in enumerate(zip(plans, edges_list, execution_times)):
 
-        # x = x_plan
-        # x = torch.tensor(x_plan, dtype=torch.float32) # [N, in_dim]
-        # x_shape = x.shape
-        # assert x_shape[1] == in_dim, f"维度不一致{x_shape[1]}"
-        # edge_index = coerce_edge_index(ei_like)     # [2,E]
+        rows = []
+        for node in x_plan:
+            # 固定长度：3 个标量 + max_len*4 个谓词槽
+            predicate_list = [0.0] * (max_len * 4)
+            preds = node["predicate_list_processed"]
 
-        # N = x.size(0)
+            # 截断或填充到 max_len
+            for j, (c, op, v, is_id) in enumerate(preds[:max_len]):
+                base = j * 4
+                predicate_list[base + 0] = float(c)
+                predicate_list[base + 1] = float(op)
+                # v 既可能是 id 也可能是数值，这里先原样放 float（id 也转 float）
+                predicate_list[base + 2] = float(v)
+                predicate_list[base + 3] = 1.0 if bool(is_id) else 0.0  # bool → float
 
-        # # 边索引有效性检查
-        # if edge_index.numel() > 0:
-        #     if int(edge_index.min()) < 0 or int(edge_index.max()) >= N:
-        #         raise ValueError(f"plan[{i}] 的 edge_index 越界：节点数 N={N}，但 edge_index.max={int(edge_index.max())}")
-        # # 可选：做成双向图（若你的 edges 只有父->子）
-        # if bidirectional:
-        #     edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
+            new_node = [
+                float(node["node_type_id"]),
+                float(node["plan_rows"]),
+                float(node["plan_width"]),
+            ] + predicate_list
 
-        # y = torch.tensor([float(y)], dtype=torch.float32)  # 图级回归标签
-        # data_list.append(Data(x=x, edge_index=edge_index, y=y))
-        data_list.append(Data(x=x_plan, edge_index=ei_like, y=y))
+            assert len(new_node) == in_dim, f"节点特征维度不一致：got {len(new_node)}, expect {in_dim}"
+            rows.append(new_node)
+
+        x = torch.tensor(rows, dtype=torch.float32)  # [N, in_dim]
+        N = x.size(0)
+
+        # edge_index: 期望 [2, E]
+        edge_index = torch.as_tensor(edge_index, dtype=torch.long)
+        if edge_index.numel() == 0:
+            edge_index = edge_index.view(2, 0)
+        elif edge_index.dim() == 2 and edge_index.shape[1] == 2 and edge_index.shape[0] != 2:
+            edge_index = edge_index.t().contiguous()
+
+        assert edge_index.shape[0] == 2, f"edge_index 需为 [2, E]，现在 {tuple(edge_index.shape)}"
+
+        # 边越界检查
+        if edge_index.numel() > 0:
+            if int(edge_index.min()) < 0 or int(edge_index.max()) >= N:
+                raise ValueError(
+                    f"plan[{i}] 的 edge_index 越界：节点数 N={N}，但 edge_index.max={int(edge_index.max())}"
+                )
+
+        # 可选：双向
+        if bidirectional and edge_index.numel() > 0:
+            edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
+
+        y = torch.tensor([float(y)], dtype=torch.float32)  # [1]
+
+        data_list.append(Data(x=x, edge_index=edge_index, y=y))
+
     return data_list
 
 # 早停机制
@@ -80,7 +112,6 @@ def train_epoch(model, loader, optimizer, criterion, device):
     model.train()
     total_loss = 0
     num_batches = 0
-    
     for batch in loader:
         batch = batch.to(device)
         optimizer.zero_grad()

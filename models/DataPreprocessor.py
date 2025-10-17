@@ -551,8 +551,8 @@ def _resolve_col(token: str, default_alias: Optional[str], full2id, col_to_fulls
     if index_name:
         index_name_str = index_name[len(bare):].split("_")[1:]
         index_name_head = ""
-        print(f"index_name_str: {index_name_str}")
-        for i in range(2):
+        # print(f"index_name_str: {index_name_str}")
+        for i in range(min(2, len(index_name_str))):
             index_name_head += index_name_str[i][0]
         if len(index_name_str) > 2:
             index_name_head += "_" + index_name_str[-1]

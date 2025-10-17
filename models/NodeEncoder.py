@@ -18,67 +18,77 @@ def default_emb_dim(cardinality: int, max_dim: int = 64) -> int:
     d = min(max_dim, d)
     return d
 
-# 谓词编码器 操作符(>, <, =)每个操作符3维,2个列每个8维,1个常量1维,1个flag1维,输出16维
-class PredicateEncoder(nn.Module):
-    def __init__(self, op_num=6, col_dim=16, const_dim=1, out_dim=16):
+class PredicateEncoder1(nn.Module):
+    def __init__(
+        self,
+        num_cols: int = 32,
+        col_dim: int = 8,
+        num_ops: int = 6,
+        op_dim: int = 3,
+        hidden_dim: int = 32,
+        out_dim: int = 16,
+        pool: str = "mean",  # "mean" | "sum" | "max"
+        padding_idx: int = 0,
+    ):
         super().__init__()
+        assert pool in {"mean", "sum", "max"}
+        self.pool = pool
 
-        op_dir = {
-            ">": 0,
-            "<": 1,
-            "=": 2,
-        }
+        self.col_emb = nn.Embedding(num_cols, col_dim, padding_idx=padding_idx)
+        self.op_emb  = nn.Embedding(num_ops,  op_dim,  padding_idx=padding_idx)
 
-        col_dir = {
-            "v_col1": 0,
-            "v_col2": 1,
-            "const": 2,
-        }
-
-        self.op_emb = nn.Embedding(op_num, 3)
-        self.col_emb = nn.Embedding(col_dim, 8)
+        # [flag(1) | col1(col_dim) | op(op_dim) | col2(col_dim or 0) | value(1 or 0)]
+        self.atom_in = 1 + col_dim + op_dim + col_dim + 1
+        self.atom_mlp = nn.Sequential(
+            nn.Linear(self.atom_in, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, out_dim),
+        )
 
     def forward(self, x):
-        for item in x:
-            op_vec = self.op_emb(self.op_dir[item[0]])
-            col_vec = self.col_emb(self.col_dir[item[1]])
-            if item[3]: # is_join
-                sec_vec = self.col_emb(self.col_dir[item[2]])
-            else:
-                sec_vec = item[2]
-            x = torch.cat([op_vec, col_vec, sec_vec, item[3]], dim=-1)
-            break
-        return x
-
-class NodeEncoder_V0(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int,
-        num_node_types: int = 13, node_type_dim: int = 16,
-        num_cols: int = 16, col_dim: int = 8,
-        num_ops: int = 6, op_dim: int = 3):
-        super().__init__()
         
-        # Node Type Embedding
-        self.node_type_emb = nn.Embedding(num_node_types, node_type_dim)
 
-        # Predicate Encoder
-        self.predicate_encoder = PredicateEncoder()
-    
-    def forward(self, x):
-        # Node Type Embedding [16]
-        node_type_emb = self.node_type_emb(x["node_type_id"])
 
-        # Num Encoder: Plan Rows, Plan Width [2]
-        num_vec = torch.cat([x["plan_rows"], x["plan_width"]], dim=-1)
+# ---------- 把 Type/Stats 也融进 NodeEncoder ----------
+class NodeEncoder_V0(nn.Module):
+    def __init__(
+        self,
+        num_node_types: int,
+        num_cols: int,
+        num_ops: int,
+        type_dim: int = 16,
+        stats_dim: int = 16,
+        pred_out_dim: int = 16,
+        hidden_dim: int = 64,
+        out_dim: int = 128,
+    ):
+        super().__init__()
+        self.type_emb = nn.Embedding(num_node_types, type_dim)
 
-        # Predicate Encoder [16]
-        predicate_emb = self.predicate_encoder(x["predicatge_list"])
+        # rows,width 已经是 log 值的话，直接过一个小 MLP
+        self.stats_mlp = nn.Sequential(
+            nn.Linear(2, stats_dim),
+            nn.ReLU(),
+            nn.Linear(stats_dim, stats_dim)
+        )
 
-        x = torch.cat([node_type_emb, predicate_emb, num_vec], dim=-1)
-        assert x.shape[-1] == self.out_dim, f"Output dimension mismatch: {x.shape[-1]} != {self.out_dim}"
+        self.pred_enc = PredicateEncoder1(
+            num_cols=num_cols, num_ops=num_ops,
+            col_dim=8, op_dim=3,
+            hidden_dim=32, out_dim=pred_out_dim, pool="mean"
+        )
 
-        # Output [16 + 16 + 2 = 34]
-        return x
+        fuse_in = type_dim + stats_dim + pred_out_dim
+        self.fuse = nn.Sequential(
+            nn.Linear(fuse_in, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, out_dim),
+            nn.LayerNorm(out_dim),
+        )
 
+    def forward(self, data):
+        print(data)
+        return 0                           # (B,out_dim)
 
 class NodeEncoder_Mini(nn.Module):
     """
@@ -94,9 +104,8 @@ class NodeEncoder_Mini(nn.Module):
             nn.LayerNorm(d_node),
         )
     
-    def forward(self, x):
-        return self.proj(x)
-
+    def forward(self, batch, data):
+        return
 class NodeEncoder(nn.Module):
     def __init__(
         self,
