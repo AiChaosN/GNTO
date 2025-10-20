@@ -11,22 +11,24 @@ import numpy as np
 class TreeEncoder_GATMini(nn.Module):
     def __init__(self, in_dim, hidden_dim, out_dim, heads1=8, drop=0.6):
         super().__init__()
-        # 第一层:
         self.gat1 = GATConv(in_channels=in_dim, out_channels=hidden_dim,
                             heads=heads1, dropout=drop, concat=True)
-        # 第二层:
-        self.gat2 = GATConv(in_channels=hidden_dim*heads1, out_channels=out_dim,
+        self.gat2 = GATConv(in_channels=hidden_dim * heads1, out_channels=out_dim,
                             heads=1, dropout=drop, concat=False)
         self.drop = drop
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, batch):
+        # GAT 计算节点特征
         x = F.dropout(x, p=self.drop, training=self.training)
         x = self.gat1(x, edge_index)
         x = F.elu(x)
         x = F.dropout(x, p=self.drop, training=self.training)
         x = self.gat2(x, edge_index)
-        return x
 
+        # ✅ 图级聚合
+        g = global_mean_pool(x, batch)   # [B, out_dim]
+        return g
+        
 # 使用GAT模型进行编码
 class GATTreeEncoder(nn.Module):
     """

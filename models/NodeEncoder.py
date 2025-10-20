@@ -19,76 +19,82 @@ def default_emb_dim(cardinality: int, max_dim: int = 64) -> int:
     return d
 
 class PredicateEncoder1(nn.Module):
-    def __init__(
-        self,
-        num_cols: int = 32,
-        col_dim: int = 8,
-        num_ops: int = 6,
-        op_dim: int = 3,
-        hidden_dim: int = 32,
-        out_dim: int = 16,
-        pool: str = "mean",  # "mean" | "sum" | "max"
-        padding_idx: int = 0,
-    ):
+    def __init__(self, num_cols=32, col_dim=8, num_ops=6, op_dim=3):
         super().__init__()
-        assert pool in {"mean", "sum", "max"}
-        self.pool = pool
-
-        self.col_emb = nn.Embedding(num_cols, col_dim, padding_idx=padding_idx)
-        self.op_emb  = nn.Embedding(num_ops,  op_dim,  padding_idx=padding_idx)
-
-        # [flag(1) | col1(col_dim) | op(op_dim) | col2(col_dim or 0) | value(1 or 0)]
-        self.atom_in = 1 + col_dim + op_dim + col_dim + 1
-        self.atom_mlp = nn.Sequential(
-            nn.Linear(self.atom_in, hidden_dim),
-            nn.GELU(),
-            nn.Linear(hidden_dim, out_dim),
-        )
-
-    def forward(self, x):
-        
-
-
-# ---------- 把 Type/Stats 也融进 NodeEncoder ----------
-class NodeEncoder_V0(nn.Module):
-    def __init__(
-        self,
-        num_node_types: int,
-        num_cols: int,
-        num_ops: int,
-        type_dim: int = 16,
-        stats_dim: int = 16,
-        pred_out_dim: int = 16,
-        hidden_dim: int = 64,
-        out_dim: int = 128,
-    ):
-        super().__init__()
-        self.type_emb = nn.Embedding(num_node_types, type_dim)
-
-        # rows,width 已经是 log 值的话，直接过一个小 MLP
-        self.stats_mlp = nn.Sequential(
-            nn.Linear(2, stats_dim),
-            nn.ReLU(),
-            nn.Linear(stats_dim, stats_dim)
-        )
-
-        self.pred_enc = PredicateEncoder1(
-            num_cols=num_cols, num_ops=num_ops,
-            col_dim=8, op_dim=3,
-            hidden_dim=32, out_dim=pred_out_dim, pool="mean"
-        )
-
-        fuse_in = type_dim + stats_dim + pred_out_dim
-        self.fuse = nn.Sequential(
-            nn.Linear(fuse_in, hidden_dim),
-            nn.GELU(),
-            nn.Linear(hidden_dim, out_dim),
-            nn.LayerNorm(out_dim),
-        )
+        self.col_emb = nn.Embedding(num_cols, col_dim)
+        self.op_emb  = nn.Embedding(num_ops,  op_dim)
 
     def forward(self, data):
-        print(data)
-        return 0                           # (B,out_dim)
+        # data: (col1_ids, op_ids, col2_or_num, is_join)  全部展平的一维 [N*3]
+        col1, op, col2_or_num, is_join = data
+        col1     = col1.long()
+        op       = op.long()
+        col2_ids = col2_or_num.long()
+        num_val  = col2_or_num.float()
+        is_join  = is_join.long()
+
+        gate = is_join.unsqueeze(-1).float()  # [T,1]
+
+        col1_emb = self.col_emb(col1)                   # [T, 8]
+        op_emb   = self.op_emb(op)                      # [T, 3]
+        col2_emb = self.col_emb(col2_ids) * gate        # [T, 8]
+        num_feat = num_val.unsqueeze(-1) * (1.0 - gate) # [T, 1]
+        is_join_f = gate                                # [T, 1]
+
+        return torch.cat([col1_emb, op_emb, col2_emb, num_feat, is_join_f], dim=-1)
+        # 维度: 8 + 3 + 8 + 1 + 1 = 21
+
+class NodeEncoder_V1(nn.Module):
+    def __init__(self, num_node_types, num_cols, num_ops,
+                 type_dim=16, num_dim=2, out_dim=39):
+        super().__init__()
+        self.type_emb = nn.Embedding(num_node_types, type_dim)
+        self.pred_enc = PredicateEncoder1(num_cols=num_cols, num_ops=num_ops,
+                                          col_dim=8, op_dim=3)
+
+        # 可选：数值 rows/width 的小投影；不想投影可直接拼接
+        self.num_proj = nn.Identity()  # 如需非线性，换成 Linear/MLP
+
+        d_pred = 8 + 3 + 8 + 1 + 1  # 21
+        in_dim = type_dim + num_dim + d_pred
+        self.proj = nn.Linear(in_dim, out_dim)  # 把拼接后的节点向量映射到 d_node
+
+    def forward(self, x: torch.Tensor):
+        """
+        x: [N, 15]  ->  [node_type | rows,width | (col1,op,c2n,ij)*3]
+        """
+        N = x.size(0)
+
+        # 1) 基本字段
+        node_type  = x[:, 0].long()      # [N]
+        rows_width = x[:, 1:3].float()   # [N,2]
+
+        t_emb = self.type_emb(node_type)         # [N, type_dim]
+        n_feat = self.num_proj(rows_width)       # [N, 2]
+
+        # 2) 谓词拆解 -> [N,3,4]
+        preds_raw = x[:, 3:].view(N, 3, 4)
+
+        # 展平成一维（按批次所有谓词）→ [N*3]
+        col1 = preds_raw[..., 0].round().long().reshape(-1)
+        op   = preds_raw[..., 1].round().long().reshape(-1)
+        c2n  = preds_raw[..., 2].float().reshape(-1)      # 既当 col2_id 也当 num（已归一化）
+        ij   = preds_raw[..., 3].round().long().reshape(-1)
+
+        # 3) 编码所有谓词 → [N*3, 21] → 回到 [N, 3, 21]
+        p_all = self.pred_enc((col1, op, c2n, ij))   # [N*3, 21]
+        p_all = p_all.view(N, 3, -1)                 # [N, 3, 21]
+
+        # 4) 掩码 + 平均（空槽位全0时不参与）
+        presence = (preds_raw.abs().sum(dim=-1) > 0).float()   # [N,3]
+        denom = presence.sum(dim=1, keepdim=True).clamp_min(1.0)
+        p_vec = (p_all * presence.unsqueeze(-1)).sum(dim=1) / denom   # [N, 21]
+
+        # 5) 拼接并线性映射到 d_node
+        node_vec = torch.cat([t_emb, n_feat, p_vec], dim=-1)   # [N, 16+2+21=39]
+        out = self.proj(node_vec)                              # [N, out_dim]
+        return out
+
 
 class NodeEncoder_Mini(nn.Module):
     """
@@ -106,264 +112,6 @@ class NodeEncoder_Mini(nn.Module):
     
     def forward(self, batch, data):
         return
-class NodeEncoder(nn.Module):
-    def __init__(
-        self,
-        num_cols: List[str],
-        cat_cols: List[str],
-        cat_cardinalities: Dict[str, int],   # 每个类别列的词表大小（含UNK）
-        num_mean: Dict[str, float],          # 数值列均值（训练集统计）
-        num_std: Dict[str, float],           # 数值列标准差（训练集统计，避免0，用>=1e-6）
-        emb_dims: Optional[Dict[str, int]] = None,
-        use_batchnorm: bool = True,
-        dropout: float = 0.1,
-    ):
-        super().__init__()
-        self.num_cols = num_cols
-        self.cat_cols = cat_cols
-
-        # 数值列标准化参数注册为 buffer（不参与训练，但会跟随 .to(device)/保存）
-        mu = [float(num_mean[c]) for c in num_cols]
-        sd = [max(float(num_std[c]), 1e-6) for c in num_cols]
-        self.register_buffer("num_mean", torch.tensor(mu).view(1, -1))
-        self.register_buffer("num_std",  torch.tensor(sd).view(1, -1))
-
-        self.use_num = len(num_cols) > 0
-        self.use_cat = len(cat_cols) > 0
-
-        # 类别 embedding
-        if self.use_cat:
-            self.embs = nn.ModuleDict()
-            self.emb_out_dims = {}
-            for c in cat_cols:
-                card = int(cat_cardinalities[c])
-                d = emb_dims[c] if (emb_dims and c in emb_dims) else default_emb_dim(card)
-                self.embs[c] = nn.Embedding(num_embeddings=card, embedding_dim=d, padding_idx=0)
-                self.emb_out_dims[c] = d
-
-        # 数值通道的线性升维（可选）
-        self.num_proj: Optional[nn.Linear] = None
-        if self.use_num:
-            # 不升维就直接拼接；也可以把数值过一层线性/BN后再拼
-            self.num_in_dim = len(num_cols)
-            self.num_proj = nn.Identity()
-
-        # 拼接后的总维度
-        total_dim = 0
-        if self.use_num:
-            total_dim += self.num_in_dim
-        if self.use_cat:
-            total_dim += sum(self.emb_out_dims.values())
-
-        # 可选 BN/Dropout
-        self.bn = nn.BatchNorm1d(total_dim) if (use_batchnorm and total_dim > 1) else nn.Identity()
-        self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Identity()
-        self.out_dim = total_dim
-
-    def forward(self, batch_num: Optional[torch.Tensor], batch_cat: Optional[Dict[str, torch.Tensor]]):
-        """
-        batch_num: [B, len(num_cols)] 的 float 张量（可为 None）
-        batch_cat: dict[col] -> [B] 的 Long 张量（每列是类别 id，0 作为 UNK/PAD）
-        """
-        feats = []
-        if self.use_num and batch_num is not None:
-            x_num = (batch_num - self.num_mean) / self.num_std  # 标准化
-            x_num = self.num_proj(x_num)                        # Identity or Linear
-            feats.append(x_num)
-
-        if self.use_cat and batch_cat is not None:
-            emb_list = []
-            for c in self.cat_cols:
-                ids = batch_cat[c]  # [B]
-                emb = self.embs[c](ids)  # [B, d_c]
-                emb_list.append(emb)
-            x_cat = torch.cat(emb_list, dim=-1) if len(emb_list) > 1 else emb_list[0]
-            feats.append(x_cat)
-
-        x = feats[0] if len(feats) == 1 else torch.cat(feats, dim=-1)  # [B, out_dim]
-        # BN 要求 B>1；单样本推理时可自动跳过或切 eval()
-        x = self.bn(x) if x.shape[0] > 1 else x
-        x = self.dropout(x)
-        return x
-
-class NodeEncoder_Enhanced(nn.Module):
-    """
-    增强版节点编码器，支持更多特征类型和编码方式
-    - 支持数值特征标准化
-    - 支持类别特征embedding
-    - 支持注意力机制
-    - 支持残差连接
-    """
-    def __init__(
-        self,
-        in_dim: int,
-        d_node: int,
-        num_node_types: int = 13,  # PostgreSQL查询计划节点类型数量
-        use_attention: bool = True,
-        use_residual: bool = True,
-        dropout: float = 0.1,
-        hidden_dim: Optional[int] = None
-    ):
-        super().__init__()
-        self.in_dim = in_dim
-        self.d_node = d_node
-        self.use_attention = use_attention
-        self.use_residual = use_residual
-        
-        # 隐藏层维度
-        hidden_dim = hidden_dim or max(d_node * 2, 64)
-        
-        # 主要的特征投影
-        self.feature_proj = nn.Sequential(
-            nn.Linear(in_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.LayerNorm(hidden_dim),
-            nn.Linear(hidden_dim, d_node)
-        )
-        
-        # 节点类型embedding（如果需要）
-        self.node_type_emb = nn.Embedding(num_node_types, d_node // 4)
-        
-        # 注意力机制（用于特征选择）
-        if use_attention:
-            self.attention = nn.MultiheadAttention(
-                embed_dim=d_node,
-                num_heads=4,
-                dropout=dropout,
-                batch_first=True
-            )
-            self.attention_norm = nn.LayerNorm(d_node)
-        
-        # 残差连接的投影（如果输入输出维度不匹配）
-        if use_residual and in_dim != d_node:
-            self.residual_proj = nn.Linear(in_dim, d_node)
-        else:
-            self.residual_proj = None
-            
-        self.final_norm = nn.LayerNorm(d_node)
-        self.dropout = nn.Dropout(dropout)
-    
-    def forward(self, x, node_type_ids=None):
-        """
-        x: [N, in_dim] 节点特征
-        node_type_ids: [N] 节点类型ID（可选）
-        """
-        # 主要特征投影
-        h = self.feature_proj(x)  # [N, d_node]
-        
-        # 添加节点类型embedding
-        if node_type_ids is not None:
-            type_emb = self.node_type_emb(node_type_ids)  # [N, d_node//4]
-            # 扩展到d_node维度
-            type_emb = F.pad(type_emb, (0, h.size(-1) - type_emb.size(-1)))
-            h = h + type_emb
-        
-        # 自注意力机制
-        if self.use_attention:
-            h_att, _ = self.attention(h.unsqueeze(0), h.unsqueeze(0), h.unsqueeze(0))
-            h_att = h_att.squeeze(0)
-            h = self.attention_norm(h + h_att)
-        
-        # 残差连接
-        if self.use_residual:
-            if self.residual_proj is not None:
-                residual = self.residual_proj(x)
-            else:
-                residual = x
-            h = h + residual
-        
-        # 最终标准化和dropout
-        h = self.final_norm(h)
-        h = self.dropout(h)
-        
-        return h
-
-class NodeEncoder_Vectorized(nn.Module):
-    """
-    基于手工特征工程的节点编码器
-    参考example中的NodeVectorizer实现
-    """
-    def __init__(
-        self,
-        node_types: List[str],
-        d_node: int,
-        plan_rows_max: float = 2e8,
-        use_parallel_feature: bool = True,
-        use_cost_features: bool = True,
-        dropout: float = 0.1
-    ):
-        super().__init__()
-        self.node_types = node_types
-        self.node_type_mapping = {k: i for i, k in enumerate(node_types)}
-        self.plan_rows_max = plan_rows_max
-        self.use_parallel_feature = use_parallel_feature
-        self.use_cost_features = use_cost_features
-        
-        # 计算输入特征维度
-        feature_dim = len(node_types)  # one-hot node type
-        if use_parallel_feature:
-            feature_dim += 2  # parallel aware (True/False)
-        feature_dim += 1  # plan rows (normalized)
-        if use_cost_features:
-            feature_dim += 2  # startup cost, total cost
-        
-        # 特征投影层
-        self.proj = nn.Sequential(
-            nn.Linear(feature_dim, d_node * 2),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.LayerNorm(d_node * 2),
-            nn.Linear(d_node * 2, d_node),
-            nn.ReLU(),
-            nn.LayerNorm(d_node)
-        )
-    
-    def vectorize_nodes(self, nodes: List[Dict]) -> torch.Tensor:
-        """
-        将节点字典列表转换为特征向量
-        """
-        vectors = []
-        for node in nodes:
-            vector = []
-            
-            # 1. Node Type (one-hot)
-            node_type_vec = [0.0] * len(self.node_types)
-            if node["Node Type"] in self.node_type_mapping:
-                node_type_vec[self.node_type_mapping[node["Node Type"]]] = 1.0
-            vector.extend(node_type_vec)
-            
-            # 2. Parallel Aware
-            if self.use_parallel_feature:
-                parallel_vec = [0.0, 0.0]
-                parallel_vec[int(node.get("Parallel Aware", False))] = 1.0
-                vector.extend(parallel_vec)
-            
-            # 3. Plan Rows (normalized)
-            plan_rows = float(node.get("Plan Rows", 0)) / self.plan_rows_max
-            vector.append(plan_rows)
-            
-            # 4. Cost features (optional)
-            if self.use_cost_features:
-                startup_cost = float(node.get("Startup Cost", 0)) / 1000.0  # 简单归一化
-                total_cost = float(node.get("Total Cost", 0)) / 1000.0
-                vector.extend([startup_cost, total_cost])
-            
-            vectors.append(vector)
-        
-        return torch.tensor(vectors, dtype=torch.float32)
-    
-    def forward(self, x):
-        """
-        x: [N, feature_dim] 或者节点字典列表
-        """
-        if isinstance(x, list):
-            # 如果输入是节点字典列表，先向量化
-            x = self.vectorize_nodes(x)
-        
-        return self.proj(x)
-
-class NodeEncoder_Mixed(nn.Module):
     """
     混合编码器，结合数值特征和类别特征
     参考archive中的MixedNodeEncoder实现
