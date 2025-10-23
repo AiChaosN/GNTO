@@ -189,65 +189,6 @@ def validate_epoch(model, loader, criterion, device, scaler=None):
 
     return avg_loss, qres['q_median'], qres['q_90']
 
-
-# # 训练&评估函数
-# def train_epoch(model, loader, optimizer, criterion, device):
-#     model.train()
-#     total_loss = 0
-#     num_batches = 0
-#     for batch in loader:
-#         batch = batch.to(device)
-#         optimizer.zero_grad()
-        
-#         # 前向传播
-#         pred = model(batch)
-#         loss = criterion(pred, batch.y)
-        
-#         # 反向传播
-#         loss.backward()
-#         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-#         optimizer.step()
-        
-#         total_loss += loss.item()
-#         num_batches += 1
-    
-#     return total_loss / num_batches
-
-# def validate_epoch(model, loader, criterion, device):
-#     model.eval()
-#     total_loss = 0
-#     num_batches = 0
-#     q_errors_all = []  # 收集整份验证集的 q-error
-#     eps = 1e-8
-    
-#     with torch.no_grad():
-#         for batch in loader:
-#             batch = batch.to(device)
-#             pred = model(batch)
-#             loss = criterion(pred, batch.y)
-#             total_loss += loss.item()
-#             num_batches += 1
-
-            
-#             # 防 0 防负；Q-Error 定义是正数比例
-#             p = torch.clamp(pred, min=eps)
-#             t = torch.clamp(batch.y,    min=eps)
-#             q_error = torch.maximum(p / t, t / p)              # [B]
-#             q_errors_all.append(q_error.cpu().numpy())
-
-#     if q_errors_all:
-#         q_all = np.concatenate(q_errors_all, axis=0)
-#         Q50 = float(np.quantile(q_all, 0.5))
-#         Q90 = float(np.quantile(q_all, 0.90))
-#     else:
-#         Q50 = float("nan")
-#         Q90 = float("nan")
-
-#     avg_loss = total_loss / max(1, num_batches)
-#     print(f"val_loss: {avg_loss:.6f} | Q50: {Q50:.6f} | Q90: {Q90:.6f}")
-
-#     return total_loss / num_batches, Q50, Q90
-
 def evaluate_model(model, test_loader, device):
     model.eval()
     preds_all, targs_all = [], []
@@ -266,24 +207,14 @@ def evaluate_model(model, test_loader, device):
     # MSE（Torch实现）
     mse = torch.mean((preds - targs) ** 2).item()
 
-    # Q-Error（Torch实现）
-    eps = 1e-8
-    p = torch.clamp(preds, min=eps)
-    t = torch.clamp(targs, min=eps)
-    q = torch.maximum(p / t, t / p)             # [N]
-    Q50 = torch.quantile(q, 0.5).item()
-    Q90 = torch.quantile(q, 0.90).item()
-
-    # 如果你需要返回 numpy
-    predictions = preds.numpy()
-    targets = targs.numpy()
+    qres = print_qerror(preds, targs)
 
     print("\n" + "="*50)
     print("测试集评估结果:")
     print("="*50)
     print(f"MSE:  {mse:.6f}")
-    print(f"Q50: {Q50:.6f}, Q90: {Q90:.6f}")
+    print(f"Q50: {qres['q_median']:.3f}, Q90: {qres['q_90']:.3f}, QMean: {qres['q_mean']:.3f}")
     print("="*50)
 
-    return predictions, targets, {'mse': mse, 'Q50': Q50, 'Q90': Q90}
+    return preds.numpy(), targs.numpy(), {'mse': mse, 'q_median': qres['q_median'], 'q_90': qres['q_90'], 'q_mean': qres['q_mean']}
 
