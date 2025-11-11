@@ -1,5 +1,6 @@
-# 数据 && 结果
+# 数据
 data/process/
 data/runs/
+
+# 结果
 results/
-tmp/
