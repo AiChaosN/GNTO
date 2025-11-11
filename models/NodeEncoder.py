@@ -159,6 +159,180 @@ class NodeEncoder_V2(nn.Module):
         out = self.proj(node_vec)                              # [N, out_dim]
         return out
 
+# 新版本,适配新数据集
+class PredicateEncoderV3(nn.Module):
+    """
+    将单个节点的一组谓词字段编码为一个向量：
+      Inputs (from data, dtype=long/float):
+        - op_type_id        [N]
+        - lhs_col_id        [N]
+        - rhs_is_col        [N] {0/1}
+        - rhs_col_id        [N]
+        - rhs_lit_is_num    [N] {0/1}
+        - rhs_lit_val       [N] (float, 已做log/标准化)
+        - rhs_lit_bucket    [N] (哈希桶id；无字符串时可为0/UNK)
+    输出一个 [N, d_pred] 的向量
+    """
+    def __init__(
+        self,
+        num_cols: int,
+        num_ops: int,
+        num_str_buckets: int,
+        col_dim: int = 16,
+        op_dim: int = 8,
+        str_dim: int = 8,
+        num_val_dim: int = 8,
+        out_dim: int = 32,
+        drop: float = 0.0,
+    ):
+        super().__init__()
+        self.col_emb = nn.Embedding(num_cols, col_dim)
+        self.op_emb  = nn.Embedding(num_ops,  op_dim)
+        self.str_emb = nn.Embedding(num_str_buckets, str_dim)
+
+        # 把数值常量 (rhs_lit_val) 提升到向量
+        self.num_proj = nn.Sequential(
+            nn.Linear(1, num_val_dim),
+            nn.ReLU(),
+            nn.Linear(num_val_dim, num_val_dim)
+        )
+
+        # 融合 op/lhs/rhs 三部分后再压缩
+        in_dim = op_dim + col_dim + max(col_dim, num_val_dim + str_dim)
+        self.fuse = nn.Sequential(
+            nn.Linear(in_dim, out_dim),
+            nn.ReLU(),
+            nn.Dropout(drop),
+            nn.Linear(out_dim, out_dim)
+        )
+
+    def forward(
+        self,
+        op_type_id: torch.LongTensor,
+        lhs_col_id: torch.LongTensor,
+        rhs_is_col: torch.LongTensor,
+        rhs_col_id: torch.LongTensor,
+        rhs_lit_is_num: torch.LongTensor,
+        rhs_lit_val: torch.FloatTensor,
+        rhs_lit_bucket: torch.LongTensor,
+    ) -> torch.FloatTensor:
+        # Embeddings
+        e_op  = self.op_emb(op_type_id.clamp_min(0))       # [N, op_dim]
+        e_lhs = self.col_emb(lhs_col_id.clamp_min(0))      # [N, col_dim]
+        e_rhs_col = self.col_emb(rhs_col_id.clamp_min(0))  # [N, col_dim]
+        e_rhs_str = self.str_emb(rhs_lit_bucket.clamp_min(0))  # [N, str_dim]
+
+        # 数值常量向量
+        v_num = self.num_proj(rhs_lit_val.view(-1, 1))     # [N, num_val_dim]
+
+        # 门控：优先列；否则常量 -> 数值 or 字符串
+        g_join = rhs_is_col.float().unsqueeze(-1)          # [N,1]
+        g_num  = rhs_lit_is_num.float().unsqueeze(-1)      # [N,1]
+
+        # 把“常量通道”拼一起再线性齐次到 col_dim，以便与列向量等维融合
+        const_vec = torch.cat([v_num, e_rhs_str], dim=-1)  # [N, num_val_dim + str_dim]
+        # 占位线性把常量通道映射到与列 embedding 相同的维度
+        const_to_col = nn.functional.linear(
+            const_vec,
+            weight=torch.zeros(const_vec.size(-1), e_rhs_col.size(-1), device=const_vec.device)
+        )
+        # 为了可学习，改用一个参数层（缓存一次）
+        if not hasattr(self, "_const_lin"):
+            self._const_lin = nn.Linear(const_vec.size(-1), e_rhs_col.size(-1), bias=False).to(const_vec.device)
+        const_proj = self._const_lin(const_vec)            # [N, col_dim]
+
+        rhs_vec = g_join * e_rhs_col + (1.0 - g_join) * (g_num * const_proj + (1.0 - g_num) * const_proj)
+
+        z = torch.cat([e_op, e_lhs, rhs_vec], dim=-1)
+        out = self.fuse(z)                                  # [N, out_dim]
+        return out
+
+class NodeEncoder_V3(nn.Module):
+    """
+    读取 data 上的多路输入并输出节点向量：
+      - 类型嵌入：op_name_id  -> type_emb
+      - 谓词嵌入：PredicateEncoderV3(...)
+      - 数值通道：x_num -> 小 MLP
+      - 拼接 -> 深层投影到 out_dim
+    期望 data 包含：
+      data.op_name_id (long)
+      data.op_type_id (long)
+      data.lhs_col_id (long)
+      data.rhs_col_id (long)
+      data.rhs_is_col (float/long -> 0/1)
+      data.rhs_lit_is_num (float/long -> 0/1)
+      data.rhs_lit_val (float)
+      data.rhs_lit_bucket (long)
+      data.x_num (float): 建议包含 [est_card, est_width, est_cost, has_predicate, rhs_is_col, rhs_lit_is_num, rhs_lit_val, literal_feature]
+    """
+    def __init__(
+        self,
+        num_node_types: int,
+        num_cols: int,
+        num_ops: int,
+        num_str_buckets: int = 1000,
+        type_dim: int = 16,
+        num_dim_in: int = 8,    # 你的 x_num 列数（与构图时一致）
+        num_dim_out: int = 8,   # 数值通道映射后的维度
+        pred_out: int = 32,     # 谓词编码输出维度
+        out_dim: int = 39,
+        hidden: int = 64,
+        drop: float = 0.2,
+    ):
+        super().__init__()
+        self.type_emb = nn.Embedding(num_node_types, type_dim)
+
+        self.pred_enc = PredicateEncoderV3(
+            num_cols=num_cols,
+            num_ops=num_ops,
+            num_str_buckets=num_str_buckets,
+            col_dim=16, op_dim=8, str_dim=8, num_val_dim=8,
+            out_dim=pred_out, drop=0.0
+        )
+
+        self.num_proj = nn.Sequential(
+            nn.Linear(num_dim_in, 16),
+            nn.ReLU(),
+            nn.Linear(16, num_dim_out)
+        )
+
+        in_dim = type_dim + pred_out + num_dim_out
+
+        # 两层残差块 + LN
+        self.proj_in = nn.Linear(in_dim, hidden)
+        self.norm1   = nn.LayerNorm(hidden)
+        self.fc1     = nn.Linear(hidden, hidden)
+        self.drop    = nn.Dropout(drop)
+        self.fc2     = nn.Linear(hidden, out_dim)
+        self.norm2   = nn.LayerNorm(out_dim)
+
+    def forward(self, data):
+        # 类型嵌入
+        t = self.type_emb(data.op_name_id)  # [N, type_dim]
+
+        # 谓词嵌入
+        p = self.pred_enc(
+            op_type_id=data.op_type_id,
+            lhs_col_id=data.lhs_col_id,
+            rhs_is_col=data.rhs_is_col.long(),
+            rhs_col_id=data.rhs_col_id,
+            rhs_lit_is_num=data.rhs_lit_is_num.long(),
+            rhs_lit_val=data.rhs_lit_val,
+            rhs_lit_bucket=data.rhs_lit_bucket
+        )  # [N, pred_out]
+
+        # 数值通道
+        x_num = self.num_proj(data.x_num)    # [N, num_dim_out]
+
+        # 融合 & 残差
+        h = torch.cat([t, p, x_num], dim=-1)  # [N, in_dim]
+        h = self.proj_in(h)                   # [N, hidden]
+        h = self.norm1(h + F.relu(h))         # pre-act small residual
+        h = self.drop(self.fc1(h))
+        h = F.relu(h)
+        h = self.fc2(h)                       # [N, out_dim]
+        h = self.norm2(h)
+        return h
 
 class NodeEncoder_Mini(nn.Module):
     """
