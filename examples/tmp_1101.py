@@ -319,6 +319,17 @@ model = CostModel(nodecoder, gatTreeEncoder, predict_head)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(model)
 
+# 打印模型参数大小
+total_params = sum(p.numel() for p in model.parameters())
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(f"\n=== Model Parameters GNTO===")
+print(f"Total Parameters: {total_params:,}")
+print(f"Trainable Parameters: {trainable_params:,}")
+print(f"========================\n")
+# === Model Parameters GNTO===
+# Total Parameters: 367,566
+# Trainable Parameters: 367,566
+# ========================
 model = model.to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.7)

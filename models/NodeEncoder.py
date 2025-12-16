@@ -421,3 +421,371 @@ class NodeEncoder_Mini(nn.Module):
             x = torch.cat([x_num, x_cat_emb], dim=-1)
         
         return self.proj(x)
+
+# 移植自 QueryFormer 的 FeatureEmbed，提供丰富的统计信息编码能力
+# 注意：使用此 Encoder 需要输入特征 x 具有特定的格式和维度 (通常为 1165 维)
+# 输入 x 应包含: [Type(1), Join(1), Filters(9), FilterMask(3), Hists(150), TableSample(1001)]
+class NodeEncoder_QF(nn.Module):
+    def __init__(self, embed_size=64, tables=None, types=None, joins=None, columns=None, 
+                 ops=None, use_sample=True, use_hist=True, bin_number=50):
+        super(NodeEncoder_QF, self).__init__()
+        
+        # 默认词表大小 (如果未提供)
+        self.tables = tables if tables is not None else 20
+        self.types = types if types is not None else 20
+        self.joins = joins if joins is not None else 10
+        self.columns = columns if columns is not None else 30
+        self.ops = ops if ops is not None else 10
+        
+        self.use_sample = use_sample
+        self.embed_size = embed_size        
+        
+        self.use_hist = use_hist
+        self.bin_number = bin_number
+        
+        self.typeEmbed = nn.Embedding(self.types, embed_size)
+        self.tableEmbed = nn.Embedding(self.tables, embed_size)
+        
+        self.columnEmbed = nn.Embedding(self.columns, embed_size)
+        self.opEmbed = nn.Embedding(self.ops, embed_size//8)
+
+        self.linearFilter2 = nn.Linear(embed_size+embed_size//8+1, embed_size+embed_size//8+1)
+        self.linearFilter = nn.Linear(embed_size+embed_size//8+1, embed_size+embed_size//8+1)
+
+        self.linearType = nn.Linear(embed_size, embed_size)
+        
+        self.linearJoin = nn.Linear(embed_size, embed_size)
+        
+        self.linearSample = nn.Linear(1000, embed_size)
+        
+        self.linearHist = nn.Linear(3, embed_size) # QueryFormer 原版是 3 -> embed_size (batch*50*3 -> transpose -> batch*50*embed)
+        # 注意: QueryFormer 原版代码中 self.linearHist = nn.Linear(bin_number, embed_size) 是错误的? 
+        # 所以原版代码确实是 nn.Linear(bin_number, embed_size)
+        self.linearHist = nn.Linear(bin_number, embed_size)
+
+        self.joinEmbed = nn.Embedding(self.joins, embed_size)
+        
+        if use_hist:
+            # 5个部分: Type, Filter, Join, Table, Hist
+            self.project = nn.Linear(embed_size*5 + embed_size//8+1, embed_size) # 最终映射到 embed_size 以适配 GNTO 接口
+        else:
+            self.project = nn.Linear(embed_size*4 + embed_size//8+1, embed_size)
+    
+    # input: B by 1165 (type, join, f1, f2, f3, mask1, mask2, mask3, hists, samples)
+    def forward(self, feature):
+        # 确保 feature 是 float (部分 Embedding 需要 long，会在内部转换)
+        
+        # 切分特征
+        # 1 + 1 + 9 + 3 + 150 + 1001 = 1165
+        typeId, joinId, filtersId, filtersMask, hists, table_sample = torch.split(
+            feature, 
+            (1, 1, 9, 3, self.bin_number*3, 1001), 
+            dim=-1
+        )
+        
+        typeEmb = self.getType(typeId)
+        joinEmb = self.getJoin(joinId)
+        filterEmbed = self.getFilter(filtersId, filtersMask)
+        
+        histEmb = self.getHist(hists, filtersMask)
+        tableEmb = self.getTable(table_sample)
+    
+        if self.use_hist:
+            final = torch.cat((typeEmb, filterEmbed, joinEmb, tableEmb, histEmb), dim=1)
+        else:
+            final = torch.cat((typeEmb, filterEmbed, joinEmb, tableEmb), dim=1)
+            
+        # 投影到单一向量，作为 Node Embedding
+        final = F.leaky_relu(self.project(final))
+        
+        return final
+    
+    def getType(self, typeId):
+        emb = self.typeEmbed(typeId.long())
+        return emb.squeeze(1)
+    
+    def getTable(self, table_sample):
+        table, sample = torch.split(table_sample, (1, 1000), dim=-1)
+        emb = self.tableEmbed(table.long()).squeeze(1)
+        
+        if self.use_sample:
+            emb = emb + self.linearSample(sample)
+        return emb
+    
+    def getJoin(self, joinId):
+        emb = self.joinEmbed(joinId.long())
+        return emb.squeeze(1)
+
+    def getHist(self, hists, filtersMask):
+        # hists: [B, 150] -> view -> [B, 50, 3] -> transpose -> [B, 3, 50]
+        histExpand = hists.view(-1, self.bin_number, 3).transpose(1, 2)
+        
+        # linearHist: [50] -> [embed_size]
+        emb = self.linearHist(histExpand) # [B, 3, embed_size]
+        
+        # Mask: filtersMask [B, 3]
+        emb[~filtersMask.bool()] = 0.  # mask out unused filters
+        
+        ## avg by # of filters
+        num_filters = torch.sum(filtersMask, dim=1)
+        total = torch.sum(emb, dim=1) # [B, embed_size]
+        
+        # 防止除以0
+        num_filters = num_filters.view(-1, 1).clamp_min(1.0)
+        avg = total / num_filters
+        
+        return avg
+        
+    def getFilter(self, filtersId, filtersMask):
+        ## filtersId: [B, 9] -> view -> [B, 3, 3] -> transpose -> [B, 3, 3] (col, op, val)
+        filterExpand = filtersId.view(-1, 3, 3).transpose(1, 2) # 这里的 transpose 看起来是为了变成 (N, 3, 3) where dim 2 is (col, op, val)?
+        # QueryFormer 代码: filterExpand = filtersId.view(-1,3,3).transpose(1,2)
+        # 假设 filtersId 是 [col1, col2, col3, op1, op2, op3, val1, val2, val3] ? 
+        # 不，通常是 [c1, o1, v1, c2, o2, v2, c3, o3, v3]。如果是这样，view(-1, 3, 3) 变成 [[c1, o1, v1], [c2, o2, v2]...]
+        # 此时 transpose(1, 2) 会变成 [[c1, c2, c3], [o1, o2, o3], [v1, v2, v3]] ??
+        # 等等，QueryFormer 取值逻辑：
+        # colsId = filterExpand[:,:,0]
+        # 如果 view 之后是 [[c1,o1,v1], [c2,o2,v2], [c3,o3,v3]]
+        # 那么 [:,:,0] 得到 [c1, c2, c3]。这是对的。
+        # 那么 transpose(1,2) 这一步是为什么？
+        # 如果原始数据是按照 (3个filter x 3个属性) 排列，view 出来就是 (filter_idx, attr_idx)。
+        # 此时 [:,:,0] 取的是第0个属性（即 col）。
+        # 所以 transpose 也许是不需要的，或者原始数据排列方式很奇怪（比如 [c1, c2, c3, o1, o2, o3...]）。
+        # 无论如何，我们照搬 QueryFormer 的逻辑，假设输入数据格式与之一致。
+        
+        # 修正: 如果直接 copy QueryFormer 代码:
+        # filterExpand = filtersId.view(-1,3,3).transpose(1,2)
+        # colsId = filterExpand[:,:,0]
+        # 假设 filtersId 排列是: [c1, c2, c3, o1, o2, o3, v1, v2, v3]
+        # view(-1, 3, 3) -> 
+        # row0: c1 c2 c3
+        # row1: o1 o2 o3
+        # row2: v1 v2 v3
+        # transpose(1, 2) ->
+        # row0: c1 o1 v1
+        # row1: c2 o2 v2
+        # row2: c3 o3 v3
+        # 这样 [:,:,0] 取到 c1, c2, c3。
+        # 所以这里的假设是输入数据按“属性优先”排列的。
+        
+        filterExpand = filtersId.view(-1, 3, 3).transpose(1, 2)
+        colsId = filterExpand[:, :, 0].long()
+        opsId = filterExpand[:, :, 1].long()
+        vals = filterExpand[:, :, 2].unsqueeze(-1) # b by 3 by 1
+        
+        col = self.columnEmbed(colsId)
+        op = self.opEmbed(opsId)
+        
+        concat = torch.cat((col, op, vals), dim=-1)
+        concat = F.leaky_relu(self.linearFilter(concat))
+        concat = F.leaky_relu(self.linearFilter2(concat))
+        
+        ## apply mask
+        concat[~filtersMask.bool()] = 0.
+        
+        ## avg by # of filters
+        num_filters = torch.sum(filtersMask, dim=1)
+        total = torch.sum(concat, dim=1)
+        
+        num_filters = num_filters.view(-1, 1).clamp_min(1.0)
+        avg = total / num_filters
+                
+        return avg
+
+
+class NodeEncoder_QF_AddPlanrows(nn.Module):
+    def __init__(self, embed_size=64, tables=None, types=None, joins=None, columns=None, 
+                 ops=None, use_sample=True, use_hist=True, bin_number=50):
+        super(NodeEncoder_QF_AddPlanrows, self).__init__()
+        
+        # 默认词表大小 (如果未提供)
+        self.tables = tables if tables is not None else 20
+        self.types = types if types is not None else 20
+        self.joins = joins if joins is not None else 10
+        self.columns = columns if columns is not None else 30
+        self.ops = ops if ops is not None else 10
+        
+        self.use_sample = use_sample
+        self.embed_size = embed_size        
+        
+        self.use_hist = use_hist
+        self.bin_number = bin_number
+        
+        self.typeEmbed = nn.Embedding(self.types, embed_size)
+        self.tableEmbed = nn.Embedding(self.tables, embed_size)
+        
+        self.columnEmbed = nn.Embedding(self.columns, embed_size)
+        self.opEmbed = nn.Embedding(self.ops, embed_size//8)
+
+        self.linearFilter2 = nn.Linear(embed_size+embed_size//8+1, embed_size+embed_size//8+1)
+        self.linearFilter = nn.Linear(embed_size+embed_size//8+1, embed_size+embed_size//8+1)
+
+        self.linearType = nn.Linear(embed_size, embed_size)
+        
+        self.linearJoin = nn.Linear(embed_size, embed_size)
+        
+        self.linearSample = nn.Linear(1000, embed_size)
+        
+        self.linearHist = nn.Linear(3, embed_size) # QueryFormer 原版是 3 -> embed_size (batch*50*3 -> transpose -> batch*50*embed)
+        # 注意: QueryFormer 原版代码中 self.linearHist = nn.Linear(bin_number, embed_size) 是错误的? 
+        # 所以原版代码确实是 nn.Linear(bin_number, embed_size)
+        self.linearHist = nn.Linear(bin_number, embed_size)
+
+        self.joinEmbed = nn.Embedding(self.joins, embed_size)
+        
+        if use_hist:
+            # 5个部分: Type, Filter, Join, Table, Hist
+            self.project = nn.Linear(embed_size*5 + embed_size//8+1, embed_size) # 最终映射到 embed_size 以适配 GNTO 接口
+        else:
+            self.project = nn.Linear(embed_size*4 + embed_size//8+1, embed_size)
+            
+        # === 新增: Plan Rows 映射层 ===
+        self.rows_proj = nn.Linear(1, self.embed_size)
+    
+    # input: B by 1165 (type, join, f1, f2, f3, mask1, mask2, mask3, hists, samples)
+    def forward(self, feature):
+        # 确保 feature 是 float (部分 Embedding 需要 long，会在内部转换)
+        
+        # 1. 尝试切分出 plan_rows (假设 feature 可能多了一维)
+        # 1165 + 1 = 1166
+        if feature.size(-1) == 1166:
+             # 前 1165 维是 QF 特征，最后 1 维是 plan_rows
+            qf_feature, plan_rows = torch.split(feature, (1165, 1), dim=-1)
+            rows_emb = F.relu(self.rows_proj(plan_rows))
+        else:
+            qf_feature = feature
+            rows_emb = None
+        if feature.size(-1) == 1166:
+             # 前 1165 维是 QF 特征，最后 1 维是 plan_rows
+            qf_feature, plan_rows = torch.split(feature, (1165, 1), dim=-1)
+            # 对 plan_rows 做简单的 Log + Linear 处理 (假设已经 log1p 了，这里直接过线性层)
+            # 需要在 init 中定义 self.rows_proj = nn.Linear(1, embed_size)
+            if not hasattr(self, 'rows_proj'):
+                # 动态添加层 (hacky but works for hotfix)，建议正式用时写在 init 里
+                self.rows_proj = nn.Linear(1, self.embed_size).to(feature.device)
+            
+            rows_emb = F.relu(self.rows_proj(plan_rows))
+        else:
+            qf_feature = feature
+            rows_emb = None
+
+        # 切分特征
+        # 1 + 1 + 9 + 3 + 150 + 1001 = 1165
+        typeId, joinId, filtersId, filtersMask, hists, table_sample = torch.split(
+            qf_feature, 
+            (1, 1, 9, 3, self.bin_number*3, 1001), 
+            dim=-1
+        )
+        
+        typeEmb = self.getType(typeId)
+        joinEmb = self.getJoin(joinId)
+        filterEmbed = self.getFilter(filtersId, filtersMask)
+        
+        histEmb = self.getHist(hists, filtersMask)
+        tableEmb = self.getTable(table_sample)
+    
+        if self.use_hist:
+            final = torch.cat((typeEmb, filterEmbed, joinEmb, tableEmb, histEmb), dim=1)
+        else:
+            final = torch.cat((typeEmb, filterEmbed, joinEmb, tableEmb), dim=1)
+            
+        # 投影到单一向量，作为 Node Embedding
+        final = F.leaky_relu(self.project(final))
+        
+        # 如果有 plan_rows，加到 final 上 (ResNet style) 或者 concat 后再投影
+        if rows_emb is not None:
+             final = final + rows_emb # 简单相加，前提是维度都是 embed_size
+        
+        return final
+    
+    def getType(self, typeId):
+        emb = self.typeEmbed(typeId.long())
+        return emb.squeeze(1)
+    
+    def getTable(self, table_sample):
+        table, sample = torch.split(table_sample, (1, 1000), dim=-1)
+        emb = self.tableEmbed(table.long()).squeeze(1)
+        
+        if self.use_sample:
+            emb = emb + self.linearSample(sample)
+        return emb
+    
+    def getJoin(self, joinId):
+        emb = self.joinEmbed(joinId.long())
+        return emb.squeeze(1)
+
+    def getHist(self, hists, filtersMask):
+        # hists: [B, 150] -> view -> [B, 50, 3] -> transpose -> [B, 3, 50]
+        histExpand = hists.view(-1, self.bin_number, 3).transpose(1, 2)
+        
+        # linearHist: [50] -> [embed_size]
+        emb = self.linearHist(histExpand) # [B, 3, embed_size]
+        
+        # Mask: filtersMask [B, 3]
+        emb[~filtersMask.bool()] = 0.  # mask out unused filters
+        
+        ## avg by # of filters
+        num_filters = torch.sum(filtersMask, dim=1)
+        total = torch.sum(emb, dim=1) # [B, embed_size]
+        
+        # 防止除以0
+        num_filters = num_filters.view(-1, 1).clamp_min(1.0)
+        avg = total / num_filters
+        
+        return avg
+        
+    def getFilter(self, filtersId, filtersMask):
+        ## filtersId: [B, 9] -> view -> [B, 3, 3] -> transpose -> [B, 3, 3] (col, op, val)
+        filterExpand = filtersId.view(-1, 3, 3).transpose(1, 2) # 这里的 transpose 看起来是为了变成 (N, 3, 3) where dim 2 is (col, op, val)?
+        # QueryFormer 代码: filterExpand = filtersId.view(-1,3,3).transpose(1,2)
+        # 假设 filtersId 是 [col1, col2, col3, op1, op2, op3, val1, val2, val3] ? 
+        # 不，通常是 [c1, o1, v1, c2, o2, v2, c3, o3, v3]。如果是这样，view(-1, 3, 3) 变成 [[c1, o1, v1], [c2, o2, v2]...]
+        # 此时 transpose(1, 2) 会变成 [[c1, c2, c3], [o1, o2, o3], [v1, v2, v3]] ??
+        # 等等，QueryFormer 取值逻辑：
+        # colsId = filterExpand[:,:,0]
+        # 如果 view 之后是 [[c1,o1,v1], [c2,o2,v2], [c3,o3,v3]]
+        # 那么 [:,:,0] 得到 [c1, c2, c3]。这是对的。
+        # 那么 transpose(1,2) 这一步是为什么？
+        # 如果原始数据是按照 (3个filter x 3个属性) 排列，view 出来就是 (filter_idx, attr_idx)。
+        # 此时 [:,:,0] 取的是第0个属性（即 col）。
+        # 所以 transpose 也许是不需要的，或者原始数据排列方式很奇怪（比如 [c1, c2, c3, o1, o2, o3...]）。
+        # 无论如何，我们照搬 QueryFormer 的逻辑，假设输入数据格式与之一致。
+        
+        # 修正: 如果直接 copy QueryFormer 代码:
+        # filterExpand = filtersId.view(-1,3,3).transpose(1,2)
+        # colsId = filterExpand[:,:,0]
+        # 假设 filtersId 排列是: [c1, c2, c3, o1, o2, o3, v1, v2, v3]
+        # view(-1, 3, 3) -> 
+        # row0: c1 c2 c3
+        # row1: o1 o2 o3
+        # row2: v1 v2 v3
+        # transpose(1, 2) ->
+        # row0: c1 o1 v1
+        # row1: c2 o2 v2
+        # row2: c3 o3 v3
+        # 这样 [:,:,0] 取到 c1, c2, c3。
+        # 所以这里的假设是输入数据按“属性优先”排列的。
+        
+        filterExpand = filtersId.view(-1, 3, 3).transpose(1, 2)
+        colsId = filterExpand[:, :, 0].long()
+        opsId = filterExpand[:, :, 1].long()
+        vals = filterExpand[:, :, 2].unsqueeze(-1) # b by 3 by 1
+        
+        col = self.columnEmbed(colsId)
+        op = self.opEmbed(opsId)
+        
+        concat = torch.cat((col, op, vals), dim=-1)
+        concat = F.leaky_relu(self.linearFilter(concat))
+        concat = F.leaky_relu(self.linearFilter2(concat))
+        
+        ## apply mask
+        concat[~filtersMask.bool()] = 0.
+        
+        ## avg by # of filters
+        num_filters = torch.sum(filtersMask, dim=1)
+        total = torch.sum(concat, dim=1)
+        
+        num_filters = num_filters.view(-1, 1).clamp_min(1.0)
+        avg = total / num_filters
+                
+        return avg
