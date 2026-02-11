@@ -8,6 +8,7 @@ import numpy as np
 from torch_geometric.nn import (
     GATConv, 
     GATv2Conv, 
+    GlobalAttention,
     global_mean_pool, 
     global_max_pool, 
     global_add_pool
@@ -283,3 +284,106 @@ class GATv2TreeEncoder_V3(nn.Module):
         g = self._pool(h, batch)  # [B, out_dim]
         return g
 
+
+class GATv2TreeEncoder_V4(nn.Module):
+    """
+    [V4 Update]
+    基于 V3 修改，严格对齐 GNTO 论文：
+    1. 使用 Global Attention Pooling (GAP) 替代 Mean/Max Pooling。
+    2. 保持 GATv2 + Residual + LayerNorm 结构。
+    """
+    def __init__(
+        self,
+        in_dim: int,
+        hidden_dim: int,
+        out_dim: int,
+        heads1: int = 8,
+        heads2: int = 4,
+        drop: float = 0.5,
+        jk: str = "last",
+        edge_drop: float = 0.0,
+    ):
+        super().__init__()
+        assert jk in {"last", "sum", "max"}
+
+        self.drop = drop
+        self.jk = jk
+        self.edge_drop = edge_drop
+
+        # ---- Layer 1 ----
+        self.gat1 = GATv2Conv(in_dim, hidden_dim, heads=heads1, dropout=drop, concat=True)
+        dim1 = hidden_dim * heads1
+        self.norm1 = nn.LayerNorm(dim1)
+        self.proj_res1 = nn.Linear(in_dim, dim1) if in_dim != dim1 else nn.Identity()
+
+        # ---- Layer 2 ----
+        self.gat2 = GATv2Conv(dim1, hidden_dim, heads=heads2, dropout=drop, concat=True)
+        dim2 = hidden_dim * heads2
+        self.norm2 = nn.LayerNorm(dim2)
+        self.proj_res2 = nn.Linear(dim1, dim2) if dim1 != dim2 else nn.Identity()
+
+        # ---- Layer 3 (to out_dim) ----
+        self.gat3 = GATv2Conv(dim2, out_dim, heads=1, dropout=drop, concat=False)
+        self.norm3 = nn.LayerNorm(out_dim)
+        self.proj_res3 = nn.Linear(dim2, out_dim)
+
+        # ---- JK Projections ----
+        if jk in {"sum", "max"}:
+            self.jk_p1 = nn.Linear(dim1, out_dim)
+            self.jk_p2 = nn.Linear(dim2, out_dim)
+        else:
+            self.jk_p1 = None
+            self.jk_p2 = None
+
+        # ---- Global Attention Pooling ----
+        # 论文 Eq(7): z_G = sum( softmax(MLP_gate(h_i)) * h_i )
+        # GlobalAttention(gate_nn, nn=None)
+        # gate_nn 输出标量权重，nn 用于变换特征（默认为 None 即不变换直接加权）
+        self.gate_nn = nn.Sequential(
+            nn.Linear(out_dim, 1),
+            # nn.Sigmoid() # PyG 内部做 softmax，通常不需要 sigmoid，但可以加
+        )
+        # 这里的 nn.Linear(out_dim, out_dim) 是论文中公式里的 h_i 变换 (可选)
+        # 如果论文是 h_i 直接加权，则设为 None。
+        # 论文公式: sum( softmax(MLP(h)) * h ) -> 也就是 feature_nn=None
+        self.pool = GlobalAttention(gate_nn=self.gate_nn, nn=None)
+
+    def _maybe_edge_drop(self, edge_index):
+        if self.training and self.edge_drop > 0.0 and dropout_edge is not None:
+            ei, _ = dropout_edge(edge_index, p=self.edge_drop, force_undirected=False)
+            return ei
+        return edge_index
+
+    def forward(self, x, edge_index, batch=None):
+        ei = self._maybe_edge_drop(edge_index)
+
+        # ----- Layer 1 -----
+        h1 = self.gat1(x, ei)
+        h1 = self.norm1(h1)
+        h1 = F.elu(h1 + self.proj_res1(x))
+        h1 = F.dropout(h1, p=self.drop, training=self.training)
+
+        # ----- Layer 2 -----
+        h2 = self.gat2(h1, ei)
+        h2 = self.norm2(h2)
+        h2 = F.elu(h2 + self.proj_res2(h1))
+        h2 = F.dropout(h2, p=self.drop, training=self.training)
+
+        # ----- Layer 3 -----
+        h3 = self.gat3(h2, ei)
+        h3 = self.norm3(h3)
+        h3 = F.elu(h3 + self.proj_res3(h2))
+        h3 = F.dropout(h3, p=self.drop, training=self.training)
+
+        # ----- JK Aggregation -----
+        if self.jk == "last":
+            h = h3
+        elif self.jk == "sum":
+            h = self.jk_p1(h1) + self.jk_p2(h2) + h3
+        else:  # "max"
+            h = torch.maximum(torch.maximum(self.jk_p1(h1), self.jk_p2(h2)), h3)
+
+        # ----- Global Attention Pooling -----
+        # 自动计算 attention weights 并聚合
+        g = self.pool(h, batch)  # [B, out_dim]
+        return g

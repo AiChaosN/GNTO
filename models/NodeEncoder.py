@@ -789,3 +789,78 @@ class NodeEncoder_QF_AddPlanrows(nn.Module):
         avg = total / num_filters
                 
         return avg
+        
+class NodeEncoder_V4(nn.Module):
+    """
+    [V4 Update]
+    基于 V2 修改，严格对齐 GNTO 论文的 DeepSets 设计：
+    1. 谓词聚合方式改为 Sum (求和)，保留 Total Filtering Mass。
+       (V1/V2 使用了 Mean Pooling)
+    2. 输入 x 结构假设与 V1/V2 一致: [node_type | rows,width | (col1,op,c2n,ij)*3]
+    """
+    def __init__(self, num_node_types, num_cols, num_ops,
+                 type_dim=16, num_dim=2, out_dim=39, hidden_dim=64, drop=0.2):
+        super().__init__()
+        self.type_emb = nn.Embedding(num_node_types, type_dim)
+
+        # 谓词编码器 (复用 V1/V2 的逻辑)
+        self.pred_enc = PredicateEncoder1(num_cols=num_cols, num_ops=num_ops,
+                                          col_dim=8, op_dim=3)
+
+        # 数值特征 MLP
+        self.num_proj = nn.Sequential(
+            nn.Linear(num_dim, 8),
+            nn.ReLU(),
+            nn.Linear(8, num_dim)
+        )
+
+        d_pred = 8 + 3 + 8 + 1 + 1  # 21
+        in_dim = type_dim + num_dim + d_pred
+
+        # 投影层
+        self.proj = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(drop),
+            nn.Linear(hidden_dim, hidden_dim // 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim // 2, out_dim)
+        )
+
+    def forward(self, x: torch.Tensor):
+        """
+        x: [N, 15] -> [node_type | rows,width | (col1,op,c2n,ij)*3]
+        """
+        N = x.size(0)
+
+        # === (1) 基本字段 ===
+        node_type  = x[:, 0].long()
+        rows_width = x[:, 1:3].float()
+
+        t_emb = self.type_emb(node_type)          # [N, type_dim]
+        n_feat = self.num_proj(rows_width)        # [N, 2]
+
+        # === (2) 谓词拆解 ===
+        preds_raw = x[:, 3:].view(N, 3, 4)
+        col1 = preds_raw[..., 0].round().long().reshape(-1)
+        op   = preds_raw[..., 1].round().long().reshape(-1)
+        c2n  = preds_raw[..., 2].float().reshape(-1)
+        ij   = preds_raw[..., 3].round().long().reshape(-1)
+
+        # === (3) 谓词编码 ===
+        p_all = self.pred_enc((col1, op, c2n, ij))
+        p_all = p_all.view(N, 3, -1)
+
+        # === (4) DeepSets Sum Aggregation (关键修改) ===
+        # 论文强调 Sum 以保留 "total filtering mass"
+        presence = (preds_raw.abs().sum(dim=-1) > 0).float()
+        
+        # V2: sum / denom (Mean)
+        # V4: sum (Sum)
+        p_vec = (p_all * presence.unsqueeze(-1)).sum(dim=1)  # [N, 21]
+
+        # === (5) 拼接并映射 ===
+        node_vec = torch.cat([t_emb, n_feat, p_vec], dim=-1)   # [N, 39]
+        out = self.proj(node_vec)                              # [N, out_dim]
+        return out

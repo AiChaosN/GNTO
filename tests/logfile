@@ -1,0 +1,30 @@
+2026-02-04 06:08:00.847 UTC [339086] LOG:  starting PostgreSQL 12.5 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.2) 11.4.0, 64-bit
+2026-02-04 06:08:00.848 UTC [339086] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2026-02-04 06:08:00.848 UTC [339086] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2026-02-04 06:08:00.848 UTC [339086] WARNING:  could not create listen socket for "localhost"
+2026-02-04 06:08:00.848 UTC [339086] FATAL:  could not create any TCP/IP sockets
+2026-02-04 06:08:00.848 UTC [339086] LOG:  database system is shut down
+2026-02-04 06:08:20.845 UTC [339570] LOG:  starting PostgreSQL 12.5 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.2) 11.4.0, 64-bit
+2026-02-04 06:08:20.845 UTC [339570] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-02-04 06:08:20.849 UTC [339570] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2026-02-04 06:08:21.332 UTC [339573] LOG:  database system was interrupted; last known up at 2025-12-19 05:03:54 UTC
+2026-02-04 06:08:21.724 UTC [339573] LOG:  database system was not properly shut down; automatic recovery in progress
+2026-02-04 06:08:21.728 UTC [339573] LOG:  redo starts at 5/E66C7628
+2026-02-04 06:08:21.728 UTC [339573] LOG:  invalid record length at 5/E66C7710: wanted 24, got 0
+2026-02-04 06:08:21.728 UTC [339573] LOG:  redo done at 5/E66C76D8
+2026-02-04 06:08:21.811 UTC [339570] LOG:  database system is ready to accept connections
+2026-02-04 06:08:44.794 UTC [339570] LOG:  received fast shutdown request
+2026-02-04 06:08:44.804 UTC [339570] LOG:  aborting any active transactions
+2026-02-04 06:08:44.805 UTC [339570] LOG:  background worker "logical replication launcher" (PID 339581) exited with exit code 1
+2026-02-04 06:08:44.807 UTC [339576] LOG:  shutting down
+2026-02-04 06:08:44.949 UTC [339570] LOG:  database system is shut down
+2026-02-04 06:17:50.268 UTC [350896] LOG:  starting PostgreSQL 12.5 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.2) 11.4.0, 64-bit
+2026-02-04 06:17:50.268 UTC [350896] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-02-04 06:17:50.273 UTC [350896] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2026-02-04 06:17:50.769 UTC [350905] LOG:  database system was shut down at 2026-02-04 06:08:44 UTC
+2026-02-04 06:17:50.771 UTC [350896] LOG:  database system is ready to accept connections
+2026-02-06 00:52:07.025 UTC [350896] LOG:  received fast shutdown request
+2026-02-06 00:52:07.028 UTC [350896] LOG:  aborting any active transactions
+2026-02-06 00:52:07.030 UTC [350896] LOG:  background worker "logical replication launcher" (PID 350912) exited with exit code 1
+2026-02-06 00:52:07.037 UTC [350907] LOG:  shutting down
+2026-02-06 00:52:08.561 UTC [350896] LOG:  database system is shut down
