@@ -2,111 +2,89 @@
 
 GNTO 是一个基于深度学习的数据库查询优化与成本预测框架。它专注于查询计划（Query Plan）的节点级编码和结构级建模，利用图神经网络（GNN）来捕捉查询计划的复杂结构特征，从而进行准确的执行时间或成本预测。
 
-## 🌟 项目亮点
+## 项目亮点 (Key Highlights)
 
-*   **分层架构设计**: 清晰分离数据预处理、节点编码、树/图编码和预测头。
-*   **增强的节点编码**: 支持多种特征提取策略，包括基础的 16 维特征和增强的 58 维全特征（包含谓词、统计信息等）。
-*   **多种模型支持**: 内置支持 GAT (Graph Attention Network)、GCN (Graph Convolutional Network) 以及基础统计模型。
-*   **灵活的配置系统**: 提供开箱即用的训练配置预设（如快速测试、统计模型、GAT 模型等）。
-*   **完善的评估体系**: 集成 Q-Error (Median, 90th percentile, Mean) 和 MSE 等评估指标。
+*   **SOTA 混合编码架构**: 融合了基于数据分布的统计特征 (QueryFormer-style Histograms) 和基于优化器的先验知识 (Optimizer Cost Estimates)，实现了比纯数据驱动方法更优的性能。
+*   **DeepSets 理论对齐**: 节点编码器 (V4) 严格遵循 DeepSets 理论，使用 Sum Pooling 聚合谓词特征，保留了集合的完整信息量 (Total Filtering Mass)。
+*   **动态图注意力机制**: 引入 GATv2 和 Global Attention Pooling，解决了传统 GAT 的静态注意力瓶颈，能够动态捕捉查询计划中关键路径和算子的影响。
+*   **模块化演进**: 拥有完整的模型演进历史 (V1 -> V4 -> QF+)，支持灵活切换不同的编码器组合进行消融实验。
 
-## 📂 项目结构
+## 项目结构
 
 ```
 GNTO/
 ├── config/                  # 训练配置管理
-│   └── training_config.py   # 预设配置 (quick_test, gat, gcn 等)
-├── data/                    # 数据集文件 (CSV/JSON 格式的查询计划)
-├── docs/                    # 项目文档
+├── data/                    # 数据集文件
+├── docs/                    # 项目文档 (新增架构演进与实验说明)
+│   ├── Model_Evolution.md          # 模型各模块详细演进历史
+│   └── Experiment_Results_Source.md # 实验结果与脚本对应表
 ├── examples/                # 示例代码与实验脚本
-│   ├── 1002_enhanced_training_example.py  # 核心：使用增强编码器的完整训练示例
-│   ├── 0120_test_dace_workload1.py        # DACE 对比测试
-│   └── ...                  # 其他对比实验 (QueryFormer 等) 和消融实验脚本
+│   ├── 1216_compGntoWithQF_addPlanrows.py # 【核心】当前 SOTA 模型训练脚本 (QF+ & GATv2)
+│   ├── 1216_compGntoWithQF.py             # 对比实验：不带 PlanRows 的版本
+│   ├── 1203_train_qf_standard.py          # 基线实验：QueryFormer 复现
+│   ├── 0204_run_ablation_gnto.py          # 消融实验自动化脚本
+│   └── ...
 ├── models/                  # 核心模型实现
-│   ├── DataPreprocessor.py  # 数据预处理与图结构转换
-│   ├── NodeEncoder.py       # 节点特征编码器
-│   ├── NodeVectorizerAll.py # 全量特征向量化实现
-│   ├── TreeEncoder.py       # 树/图编码器 (GAT, GCN)
-│   ├── PredictionHead.py    # 预测头
-│   └── TrainAndEval.py      # 训练与评估流程封装
-├── archive/                 # 归档的旧版本代码
+│   ├── NodeEncoder.py       # 节点编码器 (含 V4, QF, QF_AddPlanrows)
+│   ├── TreeEncoder.py       # 树编码器 (含 GATv2, GlobalAttention)
+│   ├── PredictionHead.py    # 预测头 (含 ResNet-style V2)
+│   └── ...
+├── archive/                 # 归档代码
 ├── requirements.txt         # 项目依赖
 └── README.md                # 项目说明
 ```
 
-## 🏗️ 架构设计
+## 核心架构 (Current SOTA)
 
-GNTO 采用模块化的流水线设计：
+目前表现最佳的模型配置 (Implemented in `examples/1216_compGntoWithQF_addPlanrows.py`)：
 
-1.  **DataPreprocessor (数据预处理)**:
-    *   解析原始查询计划（CSV/JSON）。
-    *   提取 PlanNode 结构。
-    *   将树状查询计划转换为图结构 (`edge_index`, 节点特征矩阵)。
+1.  **Node Encoder: `NodeEncoder_QF_AddPlanrows` (Hybrid)**
+    *   **基础**: 继承自 QueryFormer，使用 150维直方图 (Histograms) 和 1000维采样 (Table Samples) 捕捉数据分布。
+    *   **增强**: 显式注入优化器估算的 `Plan Rows` 作为额外特征通道。
+    *   **优势**: 结合了数据驱动的细粒度统计信息和优化器的全局代价估算能力。
 
-2.  **NodeEncoder (节点编码)**:
-    *   **NodeVectorizerAll**: 提取丰富的节点特征（最高支持 58 维），包括：
-        *   算子类型 (One-hot/Embedding)
-        *   代价估算 (Startup Cost, Total Cost, Plan Rows 等)
-        *   并行执行信息 (Parallel Aware)
-        *   谓词与过滤条件特征
-    *   支持多种编码策略：MLP, Attention 增强等。
+2.  **Tree Encoder: `GATv2TreeEncoder_V3`**
+    *   **机制**: 使用 **GATv2** (Dynamic Graph Attention) 替代标准 GAT。
+    *   **结构**: 3层 GATv2 + LayerNorm + Residual Connections。
+    *   **聚合**: 支持 Global Attention Pooling (GAP)，自动学习节点权重进行图级聚合。
 
-3.  **TreeEncoder (结构编码)**:
-    *   使用图神经网络聚合节点信息。
-    *   **GATTreeEncoder**: 利用注意力机制捕捉算子间的依赖关系。
-    *   支持配置为 GCN 或其他图模型。
+3.  **Prediction Head: `PredictionHead_V2`**
+    *   **结构**: ResNet-style 的深层预测网络。
+    *   **特点**: 包含残差连接和 LayerNorm，相比简单 MLP 具有更强的非线性拟合能力和训练稳定性。
 
-4.  **PredictionHead (预测输出)**:
-    *   将图嵌入向量映射为最终的预测值（Execution Time 或 Cost）。
-
-## 🚀 快速开始
+## 快速复现 (Quick Start)
 
 ### 1. 环境准备
-
-确保安装必要的依赖库（建议使用 Python 3.8+）：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-主要依赖包括 `torch`, `torch_geometric`, `pandas`, `numpy`, `scikit-learn` 等。
+### 2. 训练 SOTA 模型
 
-### 2. 运行示例
-
-使用增强版编码器进行训练的完整示例：
+要复现论文中的最佳结果 (Best Performance)，请运行：
 
 ```bash
-python examples/1002_enhanced_training_example.py
+python examples/1216_compGntoWithQF_addPlanrows.py
 ```
 
-该脚本将演示：
-*   不同 NodeEncoder 的对比。
-*   数据加载与预处理流程。
-*   构建 GAT 模型并进行训练。
-*   输出训练过程中的 Loss 和验证集的 Q-Error。
+该脚本会自动：
+1.  加载 QueryFormer 格式的数据集（含直方图和采样）。
+2.  注入 `Plan Rows` 特征。
+3.  训练 GNTO (QF+ / GATv2) 模型。
+4.  输出验证集 Q-Error (Median, 90th, 95th, etc.)。
 
-## ⚙️ 配置说明
+### 3. 查看对比与消融实验
 
-在 `config/training_config.py` 中定义了多种训练模式，可通过 `get_config` 调用：
+*   **查看模型演进细节**: 请阅读 `docs/Model_Evolution.md`。
+*   **查找实验对应关系**: 请阅读 `docs/Experiment_Results_Source.md`。
+*   **运行消融实验**:
+    ```bash
+    python examples/0204_run_ablation_gnto.py
+    ```
 
-*   `quick_test`: 快速调试配置（小 Batch，少 Epoch）。
-*   `statistical`: 统计基线模型配置。
-*   `gat`: 标准 GAT 模型训练配置（推荐）。
-*   `gcn`: GCN 模型训练配置。
-*   `multi_target`: 同时预测时间和成本的多目标配置。
+## 实验结论摘要
 
-示例用法：
-
-```python
-from config.training_config import get_config
-config = get_config('gat')
-```
-
-## 📊 实验与对比
-
-`examples/` 目录下包含多个用于对比实验的脚本：
-*   **DACE 对比**: `0120_test_dace_workload1.py`
-*   **QueryFormer 对比**: 相关脚本如 `1216_compGntoWithQF.py`
-*   **消融实验**: `0204_run_ablation_gnto.py`
-
-这些脚本用于验证 GNTO 在不同 Workload（如 JOB-Light, TPC-H）下相对于其他 SOTA 方法的性能优势。
+*   **GNTO vs QueryFormer**: 引入 `Plan Rows` 和 GATv2 后，GNTO 在复杂查询上的 Q-Error (95th/99th) 显著优于原始 QueryFormer。
+*   **GAT vs GATv2**: 动态注意力机制 (GATv2) 在处理长路径依赖时表现更佳。
+*   **Hybrid Encoding**: 混合编码 (QF+PlanRows) 证明了优化器的估算值虽然不完美，但包含重要的高阶逻辑信息，能有效辅助神经网络。
