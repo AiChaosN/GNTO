@@ -126,16 +126,35 @@ for i, metric in enumerate(metrics):
         else:
             pass
 
-    ax.set_title(metric)
+    # ax.set_title(metric) # Remove title
     ax.set_xlabel('Epoch')
     ax.set_ylabel(metric)
-    ax.legend(loc='upper right')
+    # ax.legend(loc='upper right')
     # 调整网格线
     # ax.grid(True, which="major", ls="-", alpha=0.4) # Moved inside loop
 
-plt.tight_layout()
+# 整个图共用一个图例，放在顶部中央
+handles, labels = axes[0].get_legend_handles_labels()
+
+# 2. 修改 fig.legend 参数
+fig.legend(
+    handles, 
+    labels, 
+    loc='upper center', 
+    bbox_to_anchor=(0.5, 1.0), # 将锚点稍微调低到 1.0，配合 tight_layout 的 rect 使用
+    ncol=3,                    # 修改为 3 列一排
+    fontsize=20, 
+    frameon=True,
+    columnspacing=1.0,         # 可选：调整列与列之间的间距
+    handletextpad=0.5          # 可选：调整图标与文字之间的间距
+)
+
+# 3. 调整子图布局，为顶部图例留出更多空间
+# rect=[左, 下, 右, 上] -> 将 0.96 调低（例如 0.90 或 0.88），顶部留白会变大
+plt.tight_layout(rect=[0, 0, 1, 0.94])
+
 # output_file = "training_comparison_1218.png"
-output_file = "0202_comp_gntoVsGAT1VsGAT2.pdf" # Vector format
+output_file = "0226_comp_gntoVsGAT1VsGAT2.pdf" # Vector format
 plt.savefig(output_file)
 print(f"Plot saved to {output_file}")
 # plt.show() # Commented out for headless environments, but valid if running locally with display

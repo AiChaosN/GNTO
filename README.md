@@ -91,6 +91,51 @@ The best-performing model configuration (implemented in `examples/1216_compGntoW
 
 ## Experimental Findings Summary
 
+To run the comparison experiments, please download the corresponding repositories and refer to each repository's README.md for instructions:
+
+```shell
+# clone the corresponding repositories
+git clone https://github.com/AiChaosN/DACE.git
+git clone https://github.com/AiChaosN/QueryFormer_VLDB2022.git
+git clone https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
+
+# Queryformer vs GNTO
+# get GNTO results
+python examples/1216_compGntoWithQF_addPlanrows.py
+# get Queryformer results
+# ref README.md in https://github.com/AiChaosN/QueryFormer_VLDB2022.git
+# ploy the results
+python examples/0202_compare_logs_QFvsGNTO.py
+
+# DACE vs GNTO
+# get GNTO results
+python 0227_test_dace_workload1.py
+# get DACE results
+# ref README.md in https://github.com/AiChaosN/DACE.git
+# ploy the results
+python 0121_plot_comparison.py
+
+# LIMAO vs GNTO
+# get GNTO results
+python gnto_ex/run_limao_gnto_comparison.py
+# get LIMAO results
+# ref README.md in https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
+# ploy the results
+python gnto_ex/plot_end2end_comparison.py
+
+# ablation experiments 1: GAT vs GATv2
+# get GNTO results
+python examples/1216_compGntoWithQF_addPlanrows.py
+python examples/1216_compGntoWithQF.py
+python examples/1203_train_qf_standard.py
+# ploy the results
+python examples/0202_compare_logs_GNTO_GAT1vsGAT2.py
+
+# ablation experiments 2: run the full experiment
+python examples/0204_run_ablation_gnto.py
+python examples/0204_plot_ablation_gnto.py
+```
+
 *   **GNTO vs QueryFormer**: With `Plan Rows` and GATv2, GNTO significantly outperforms original QueryFormer on Q-Error (95th/99th) for complex queries.
 *   **GAT vs GATv2**: The dynamic attention mechanism (GATv2) performs better when handling long-range path dependencies.
 *   **Hybrid Encoding**: Hybrid encoding (QF+PlanRows) demonstrates that optimizer estimates, though imperfect, contain important high-level logical information that effectively assists the neural network.

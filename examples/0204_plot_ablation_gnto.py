@@ -152,7 +152,7 @@ def main():
                         linestyle=linestyle, alpha=alpha, zorder=zorder)
         
         if has_data:
-            ax.set_title(metric)
+            # ax.set_title(metric) # Remove title
             ax.set_xlabel('Epoch')
             ax.set_ylabel(metric)
             ax.set_yscale('log')
@@ -169,15 +169,33 @@ def main():
                 ax.yaxis.set_major_locator(ticker.LogLocator(base=10.0, subs='auto', numticks=6))
             
             ax.yaxis.set_minor_formatter(ticker.NullFormatter())
-            
-            ax.legend()
+            ax.set_xticks([10, 20, 30, 40, 50]) # 手动指定刻度
+            # ax.legend()
             # Adjust grid lines
             ax.grid(True, which="major", ls="-", alpha=0.4)
         else:
             ax.text(0.5, 0.5, f"Metric {metric} not found", ha='center', va='center')
 
-    plt.tight_layout()
-    
+    # 整个图共用一个图例，放在顶部中央
+    handles, labels = axes[0].get_legend_handles_labels()
+
+    # 2. 修改 fig.legend 参数
+    fig.legend(
+        handles, 
+        labels, 
+        loc='upper center', 
+        bbox_to_anchor=(0.5, 1.0), # 将锚点稍微调低到 1.0，配合 tight_layout 的 rect 使用
+        ncol=3,                    # 修改为 3 列一排
+        fontsize=20, 
+        frameon=True,
+        columnspacing=1.0,         # 可选：调整列与列之间的间距
+        handletextpad=0.5          # 可选：调整图标与文字之间的间距
+    )
+
+    # 3. 调整子图布局，为顶部图例留出更多空间
+    # rect=[左, 下, 右, 上] -> 将 0.96 调低（例如 0.90 或 0.88），顶部留白会变大
+    plt.tight_layout(rect=[0, 0, 1, 0.90])
+
     # Determine output path
     output_dir = "."
     if args.path:

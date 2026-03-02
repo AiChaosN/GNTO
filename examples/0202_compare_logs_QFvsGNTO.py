@@ -108,7 +108,9 @@ for i, metric in enumerate(metrics):
         else:
             pass
 
-    ax.set_title(metric)
+    # ax.set_title(metric)
+    ax.set_xticks([20, 40, 60, 80, 100]) # 手动指定刻度
+    # ax.set_xlim(0, 100) # 限制显示范围
     ax.set_xlabel('Epoch')
     ax.set_ylabel(metric)
     ax.legend()
@@ -117,7 +119,7 @@ for i, metric in enumerate(metrics):
 
 plt.tight_layout()
 # output_file = "training_comparison_1218.png"
-output_file = "0202_comp_gntoVsQf.pdf" # Vector format
+output_file = "0226_comp_gntoVsQf.pdf" # Vector format
 plt.savefig(output_file)
 print(f"Plot saved to {output_file}")
 # plt.show() # Commented out for headless environments, but valid if running locally with display

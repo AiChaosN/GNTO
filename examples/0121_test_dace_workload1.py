@@ -91,12 +91,6 @@ class DaceWorkloadDataset(InMemoryDataset):
                 # Build Graph
                 x, edge_index = self.plan_to_graph(root_node)
                 
-                # Target: Actual Total Time
-                # DACE normalizes time by dividing by max_runtime (30000) or using log
-                # DACE code: run_times = np.array(run_times).astype(np.float32) / configs["max_runtime"] + 1e-7
-                # Here we will use raw time for now, and normalize in dataset or model if needed.
-                # But to compare with DACE Q-Error, we should predict raw time eventually.
-                # Let's store raw time in y.
                 exec_time = root_node.get("Actual Total Time", 0.0)
                 y = torch.tensor([exec_time], dtype=torch.float)
                 
@@ -206,28 +200,28 @@ def train_and_eval():
     print("Loading Statistics...")
     stats = get_statistics()
     
-    # 0-9 Train, 10-19 Test
-    train_dbs = WORKLOADS[:10]
-    test_dbs = WORKLOADS[10:]
-    
+    # Random selected 10 databases for training and testing
+    train_db_ids = [3, 10, 11, 12, 13, 14, 15, 16, 18, 19]
+    test_db_ids = [0, 1, 2, 4, 5, 6, 7, 8, 9, 17]
+    train_dbs = [WORKLOADS[i] for i in train_db_ids]
+    test_dbs = [WORKLOADS[i] for i in test_db_ids]
     print(f"Train DBs: {train_dbs}")
     print(f"Test DBs: {test_dbs}")
     
     print("Preparing Datasets...")
-    # We pass WORKLOAD1_DIR as root
     train_dataset = DaceWorkloadDataset(WORKLOAD1_DIR, train_dbs, stats)
     test_dataset = DaceWorkloadDataset(WORKLOAD1_DIR, test_dbs, stats)
     
     print(f"Train Size: {len(train_dataset)}")
     print(f"Test Size: {len(test_dataset)}")
     
-    train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=256, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
     
     # Setup Model
     num_node_types = len(stats["node_types"]["value_dict"])
     input_dim = num_node_types + 2
-    hidden_dim = 128
+    hidden_dim = 64
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = GNTO_Workload1_Model(input_dim, hidden_dim, 1).to(device)
@@ -240,7 +234,7 @@ def train_and_eval():
     # Model parameters: 1,028,225
     # Param size: 3.922 MB
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     # DACE-like Q-Error Loss
     # DACE: log(max(est/run, run/est))
     # Inputs are normalized to [0, 1] (plus epsilon)
@@ -257,7 +251,7 @@ def train_and_eval():
     MAX_RUNTIME = 30000.0
     
     print("Starting Training...")
-    epochs = 15
+    epochs = 10
     
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
 
