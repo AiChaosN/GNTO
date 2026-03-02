@@ -116,10 +116,8 @@ python 0227_test_dace_workload1.py
 python 0121_plot_comparison.py
 
 # LIMAO vs GNTO
-# get GNTO results
-python gnto_ex/run_limao_gnto_comparison.py
-# get LIMAO results
 # ref README.md in https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
+# branch: LIMAO_GNTO
 # ploy the results
 python gnto_ex/plot_end2end_comparison.py
 
