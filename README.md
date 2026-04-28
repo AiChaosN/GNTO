@@ -55,10 +55,12 @@ GNTO/
 ├── docs/                    # Project documentation
 │   ├── Model_Evolution.md          # Detailed model module evolution history
 │   └── Experiment_Results_Source.md # Experiment results and script mapping
-├── examples/                # Example code and experiment scripts
-│   ├── 1216_compGntoWithQF_addPlanrows.py # [Core] Current SOTA model training script (QF+ & GATv2)
-│   ├── 1216_compGntoWithQF.py             # Comparison: version without PlanRows
-│   ├── 1203_train_qf_standard.py          # Baseline: QueryFormer reproduction
+├── examples/                # Example code and experiment scripts (all use centralized adapters)
+│   ├── 1216_compGntoWithQF_addPlanrows.py # [Core] SOTA training (QF+ & GATv2, via qf_adapter)
+│   ├── 1216_compGntoWithQF.py             # Comparison without PlanRows (via qf_adapter)
+│   ├── 1203_train_qf_standard.py          # Baseline: QF reproduction (via qf_adapter)
+│   ├── 0120_test_dace_workload1.py        # DACE cross-DB test, sequential split (via dace_adapter)
+│   ├── 0121_test_dace_workload1.py        # DACE cross-DB test, random split (via dace_adapter)
 │   ├── 0204_run_ablation_gnto.py          # Ablation experiment automation
 │   └── ...
 ├── models/                  # Core model implementations (single source of truth)
@@ -129,18 +131,16 @@ python examples/1216_compGntoWithQF_addPlanrows.py
 python examples/0202_compare_logs_QFvsGNTO.py
 
 # DACE vs GNTO
-# get GNTO results
-python 0227_test_dace_workload1.py
+# get GNTO results (sequential split)
+python examples/0120_test_dace_workload1.py
+# get GNTO results (random split)
+python examples/0121_test_dace_workload1.py
 # get DACE results
 # ref README.md in https://github.com/AiChaosN/DACE.git
-# ploy the results
-python 0121_plot_comparison.py
 
-# LIMAO vs GNTO
+# LIMAO vs GNTO (end-to-end via Bao server)
 # ref README.md in https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
-# branch: LIMAO_GNTO
-# ploy the results
-python gnto_ex/plot_end2end_comparison.py
+# LIMAO's bao_server imports GNTO via adapters/limao_adapter.py
 
 # ablation experiments 1: GAT vs GATv2
 # get GNTO results
