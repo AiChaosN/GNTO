@@ -61,11 +61,15 @@ GNTO/
 │   ├── 1203_train_qf_standard.py          # Baseline: QueryFormer reproduction
 │   ├── 0204_run_ablation_gnto.py          # Ablation experiment automation
 │   └── ...
-├── models/                  # Core model implementations
+├── models/                  # Core model implementations (single source of truth)
 │   ├── NodeEncoder.py       # Node encoder (V4, QF, QF_AddPlanrows)
 │   ├── TreeEncoder.py       # Tree encoder (GATv2, GlobalAttention)
 │   ├── PredictionHead.py    # Prediction head (ResNet-style V2)
 │   └── ...
+├── adapters/                # Baseline integration adapters
+│   ├── qf_adapter.py       # QueryFormer benchmark adapter (static regression)
+│   ├── limao_adapter.py    # LIMAO/Bao end-to-end adapter
+│   └── dace_adapter.py     # DACE cross-database benchmark adapter
 ├── archive/                 # Archived code
 ├── requirements.txt         # Project dependencies
 └── README.md                # Project overview
@@ -88,6 +92,23 @@ The best-performing model configuration (implemented in `examples/1216_compGntoW
 3.  **Prediction Head: `PredictionHead_V2`**
     *   **Structure**: ResNet-style deep prediction network.
     *   **Features**: Residual connections and LayerNorm for stronger nonlinear fitting and training stability compared to simple MLPs.
+
+## Baseline Integration Architecture
+
+GNTO uses an **adapter pattern** to integrate with different baselines. All GNTO model code lives exclusively in `models/`, and each baseline is connected through a thin adapter in `adapters/`.
+
+| Baseline | Adapter | Integration Pattern | Data Format |
+|----------|---------|-------------------|-------------|
+| **QueryFormer** | `qf_adapter.py` | GNTO imports QF's data utilities, converts to PyG | 1165-dim QF features (histograms + table samples) |
+| **LIMAO (Bao)** | `limao_adapter.py` | LIMAO's Bao server imports GNTO adapter | Online PG EXPLAIN JSON → 15-dim features |
+| **DACE** | `dace_adapter.py` | GNTO loads DACE's workload JSON | Node-type one-hot + scaled cost/rows |
+
+**Key design principle**: GNTO's `models/` is the **single source of truth**. Baseline forks (QueryFormer, LIMAO, DACE) should NOT contain copies of GNTO model code. Instead, they import from this repository via adapters.
+
+Each adapter provides:
+- **Data conversion**: Transform baseline-specific data format → PyG `Data` objects
+- **Model assembly**: Combine appropriate NodeEncoder + TreeEncoder + PredictionHead for the baseline's benchmark
+- **Evaluation utilities**: Baseline-compatible metrics (Q-Error, etc.)
 
 ## Experimental Findings Summary
 
