@@ -256,19 +256,13 @@ def unnormalize(y_norm, cost_norm):
 
 def calc_q_error(preds, targets):
     """计算 Q-Error 百分位数 [50, 75, 90, 95, 99]。"""
-    qerrors = []
-    for p, t in zip(preds, targets):
-        if p == 0 and t == 0:
-            qerrors.append(1.0)
-        elif p == 0 or t == 0:
-            qerrors.append(float('inf'))
-        else:
-            qerrors.append(max(p / t, t / p))
-    return np.percentile(qerrors, [50, 75, 90, 95, 99])
+    from utils.metrics import qerror_percentiles
+    q = qerror_percentiles(preds, targets, percentiles=(50, 75, 90, 95, 99))
+    return np.array([q["q50"], q["q75"], q["q90"], q["q95"], q["q99"]])
 
 
-def evaluate(model, loader, cost_norm, device):
-    """在验证集上评测，返回 (avg_loss, q50, q75, q90, q95, q99)。"""
+def _run_inference(model, loader, cost_norm, device):
+    """Shared loop: returns (avg_loss, preds_raw, targets_raw) on the raw scale."""
     model.eval()
     preds_all, targets_all = [], []
     total_loss = 0
@@ -286,5 +280,28 @@ def evaluate(model, loader, cost_norm, device):
             targets_all.extend(target_raw)
 
     avg_loss = total_loss / len(loader.dataset)
-    q50, q75, q90, q95, q99 = calc_q_error(preds_all, targets_all)
+    return avg_loss, np.asarray(preds_all), np.asarray(targets_all)
+
+
+def evaluate(model, loader, cost_norm, device):
+    """在验证集上评测，返回 (avg_loss, q50, q75, q90, q95, q99)。"""
+    avg_loss, preds, targets = _run_inference(model, loader, cost_norm, device)
+    q50, q75, q90, q95, q99 = calc_q_error(preds, targets)
     return avg_loss, q50, q75, q90, q95, q99
+
+
+def evaluate_full(model, loader, cost_norm, device, group_ids=None):
+    """Rich evaluation: Q-Error + Spearman/Kendall/pairwise-acc + (optional) Top-1 regret.
+
+    Returns:
+        dict with keys: avg_loss, q50/q75/q90/q95/q99, spearman, kendall,
+        pairwise_acc, and (if group_ids given) top1_regret_mean/median/relative.
+        Also embeds preds and targets arrays for downstream use.
+    """
+    from utils.metrics import evaluation_summary
+    avg_loss, preds, targets = _run_inference(model, loader, cost_norm, device)
+    summary = {"avg_loss": float(avg_loss)}
+    summary.update(evaluation_summary(preds, targets, group_ids=group_ids))
+    summary["preds"] = preds
+    summary["targets"] = targets
+    return summary

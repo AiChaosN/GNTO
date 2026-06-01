@@ -99,11 +99,11 @@ The best-performing model configuration (implemented in `examples/1216_compGntoW
 
 GNTO uses an **adapter pattern** to integrate with different baselines. All GNTO model code lives exclusively in `models/`, and each baseline is connected through a thin adapter in `adapters/`.
 
-| Baseline | Adapter | Integration Pattern | Data Format |
-|----------|---------|-------------------|-------------|
-| **QueryFormer** | `qf_adapter.py` | GNTO imports QF's data utilities, converts to PyG | 1165-dim QF features (histograms + table samples) |
-| **LIMAO (Bao)** | `limao_adapter.py` | LIMAO's Bao server imports GNTO adapter | Online PG EXPLAIN JSON → 15-dim features |
-| **DACE** | `dace_adapter.py` | GNTO loads DACE's workload JSON | Node-type one-hot + scaled cost/rows |
+| Baseline | Task Paradigm | Data | Adapter | Integration Pattern |
+|----------|---|---|---------|-------------------|
+| **QueryFormer** | offline plan prediction | QF's IMDB 100k / JOB-light (70) / synthetic (500) | `qf_adapter.py` | GNTO imports QF's FeatureEmbed (1165-dim) and PlanTreeDataset; converts to PyG; replaces QF's transformer tree-encoder with GATv2 |
+| **DACE** | offline cross-database | workload1 (10+ DBs; half train / half test) | `dace_adapter.py` | GNTO loads DACE workload JSON; `GNTO_DACE_Model` swaps NodeEncoder to match DACE features (node-type one-hot + scaled cost/rows), reuses GATv2 + head |
+| **LIMAO** | online end-to-end steering | live PG + bao_server framework | `limao_adapter.py` | LIMAO's `bao_server` imports GNTO components; predictions logged to `gnto_predictions.csv`. Workflow: `LIMAOLifeLongRLDB/gnto_ex/workflow.sh`. |
 
 **Key design principle**: GNTO's `models/` is the **single source of truth**. Baseline forks (QueryFormer, LIMAO, DACE) should NOT contain copies of GNTO model code. Instead, they import from this repository via adapters.
 
@@ -112,48 +112,68 @@ Each adapter provides:
 - **Model assembly**: Combine appropriate NodeEncoder + TreeEncoder + PredictionHead for the baseline's benchmark
 - **Evaluation utilities**: Baseline-compatible metrics (Q-Error, etc.)
 
-## Experimental Findings Summary
+## Experiment Scripts
 
-To run the comparison experiments, please download the corresponding repositories and refer to each repository's README.md for instructions:
+All experiment scripts are in `examples/`. Clone the baseline repositories first:
 
 ```shell
-# clone the corresponding repositories
 git clone https://github.com/AiChaosN/DACE.git
 git clone https://github.com/AiChaosN/QueryFormer_VLDB2022.git
 git clone https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
+```
 
-# Queryformer vs GNTO
-# get GNTO results
-python examples/1216_compGntoWithQF_addPlanrows.py
-# get Queryformer results
-# ref README.md in https://github.com/AiChaosN/QueryFormer_VLDB2022.git
-# ploy the results
-python examples/0202_compare_logs_QFvsGNTO.py
+### Training experiments
 
-# DACE vs GNTO
-# get GNTO results (sequential split)
-python examples/0120_test_dace_workload1.py
-# get GNTO results (random split)
-python examples/0121_test_dace_workload1.py
-# get DACE results
-# ref README.md in https://github.com/AiChaosN/DACE.git
+| Script | Description | Baseline | Note |
+|--------|-------------|----------|------|
+| `1216_compGntoWithQF_addPlanrows.py` | **SOTA** GNTO (QF + PlanRows + GATv2) | QueryFormer | Best config |
+| `1216_compGntoWithQF.py` | GNTO without PlanRows | QueryFormer | Ablation: PlanRows effect |
+| `0519_eval_real_qf.py` | Re-evaluate real QueryFormer (4.48M-param transformer) ckpt from `QueryFormer_VLDB2022/results/full/cost/` | QueryFormer | Pulls in the actual baseline; no re-training |
+| `0519_eval_qf_jobsynth.py` | GNTO + real QF on JOB-light / synthetic datasets | QueryFormer | Adds the missing 2/3 datasets |
+| `0120_test_dace_workload1.py` | DACE cross-DB, sequential split (DB 0-9 train / 10-19 test), hidden=128, epochs=15 | DACE | |
+| `0121_test_dace_workload1.py` | DACE cross-DB, random split, hidden=64, epochs=10 | DACE | |
+| `0204_run_ablation_gnto.py` | Full ablation (Hist/Sample/GNN/Head combinations, 6 configs) | Self | Outputs to `results/Ablation_GNTO_*` |
 
-# LIMAO vs GNTO (end-to-end via Bao server)
-# ref README.md in https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
-# LIMAO's bao_server imports GNTO via adapters/limao_adapter.py
+### Visualization / plotting (run after training)
 
-# ablation experiments 1: GAT vs GATv2
-# get GNTO results
+| Script | Description | Depends on |
+|--------|-------------|------------|
+| `0202_compare_logs_QFvsGNTO.py` | QF vs GNTO training curve comparison | `1216_compGntoWithQF_addPlanrows.py` results |
+| `0202_compare_logs_GNTO_GAT1vsGAT2.py` | GAT vs GATv2 comparison | `1216_*` and `1203_*` results |
+| `0204_plot_ablation_gnto.py` | Ablation results visualization | `0204_run_ablation_gnto.py` results |
+
+### LIMAO end-to-end
+
+LIMAO experiments run inside `LIMAOLifeLongRLDB/`, not in GNTO. The Bao server loads GNTO via `adapters/limao_adapter.py`. See the [LIMAOLifeLongRLDB README](https://github.com/AiChaosN/LIMAOLifeLongRLDB) for instructions.
+
+### Reproduce all experiments
+
+```shell
+# 1. GNTO vs QueryFormer (plan-level cost prediction)
+python examples/1216_compGntoWithQF_addPlanrows.py   # train GNTO SOTA on QF 100k IMDB
+python examples/0519_eval_real_qf.py                 # eval the real (transformer) QF ckpt on the same val split
+python examples/0519_eval_qf_jobsynth.py             # GNTO + real QF on JOB-light + synthetic
+python examples/0202_compare_logs_QFvsGNTO.py        # training-curve plot
+
+# 2. GNTO vs DACE (cross-database generalization)
+python examples/0120_test_dace_workload1.py          # sequential split
+python examples/0121_test_dace_workload1.py          # random split
+
+# 3. GNTO vs LIMAO (end-to-end via Bao server)
+# See LIMAOLifeLongRLDB README
+
+# 4. GAT vs GATv2 ablation
 python examples/1216_compGntoWithQF_addPlanrows.py
 python examples/1216_compGntoWithQF.py
 python examples/1203_train_qf_standard.py
-# ploy the results
-python examples/0202_compare_logs_GNTO_GAT1vsGAT2.py
+python examples/0202_compare_logs_GNTO_GAT1vsGAT2.py  # plot comparison
 
-# ablation experiments 2: run the full experiment
+# 5. Full ablation study (6 configs x 50 epochs)
 python examples/0204_run_ablation_gnto.py
-python examples/0204_plot_ablation_gnto.py
+python examples/0204_plot_ablation_gnto.py             # plot results
 ```
+
+## Experimental Findings Summary
 
 *   **GNTO vs QueryFormer**: With `Plan Rows` and GATv2, GNTO significantly outperforms original QueryFormer on Q-Error (95th/99th) for complex queries.
 *   **GAT vs GATv2**: The dynamic attention mechanism (GATv2) performs better when handling long-range path dependencies.

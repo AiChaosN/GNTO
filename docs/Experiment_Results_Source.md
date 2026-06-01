@@ -4,17 +4,17 @@ This document maps the experimental results to the specific scripts that generat
 
 ## 1. Main Performance Comparison (GNTO vs. Baselines)
 
-These scripts generate the core results proving GNTO's effectiveness against QueryFormer.
+GNTO is compared against three baselines, each evaluated under its own task paradigm:
 
-| Experiment Goal | Script Path | Model Configuration | Output / Log File |
-| :--- | :--- | :--- | :--- |
-| **Best GNTO Model** | `examples/1216_compGntoWithQF_addPlanrows.py` | **Node:** QF_AddPlanrows<br>**Tree:** GATv2<br>**Head:** V2 | `../results/GNTO_QF_[timestamp]/` |
-| **GNTO (No PlanRows)** | `examples/1216_compGntoWithQF.py` | **Node:** QF (Standard)<br>**Tree:** GATv2<br>**Head:** V2 | `../results/GNTO_QF_[timestamp]/` |
-| **QueryFormer (Baseline)** | `examples/1203_train_qf_standard.py` | **Node:** QF<br>**Tree:** Transformer (Native)<br>**Head:** MLP | `../results/QF_Standard_[timestamp]/` |
+| Baseline | Paradigm | Data | Script (GNTO-side) | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **QueryFormer** | offline plan-prediction (in-distribution) | QF's IMDB 100k / JOB-light (70 queries) / synthetic (500 queries) | `examples/1216_compGntoWithQF_addPlanrows.py` (train) + `examples/0519_eval_real_qf.py` (re-eval real QF ckpt) | Real QF = 4.48M-param transformer, ckpt at `QueryFormer_VLDB2022/results/full/cost/best_model.pt`. GNTO uses QF's FeatureEmbed + GATv2 tree encoder. |
+| **DACE** | offline cross-database | DACE workload1 (10 DBs, half train / half test) | `examples/0120_test_dace_workload1.py`, `examples/0121_test_dace_workload1.py` | GNTO uses `adapters/dace_adapter.GNTO_DACE_Model` (NodeEncoder swapped to match DACE feature dim; same tree encoder + head). |
+| **LIMAO** | online end-to-end steering | live PG + bao_server framework | `adapters/limao_adapter.py` (GNTO plugs into LIMAO's `bao_server`); workflow in `LIMAOLifeLongRLDB/gnto_ex/workflow.sh`. Q-Error doesn't apply (different scales); use ranking metrics on `gnto_predictions.csv` plus end-to-end latency. | Predictions logged at `LIMAOLifeLongRLDB/gnto_ex/gnto_predictions.csv`; compared via `compare_models.py`. |
 
 ### Result Analysis
 *   **Comparison Plot:** Use `examples/0202_compare_logs_QFvsGNTO.py` to generate the Q-Error comparison plots between the best GNTO model and the QueryFormer baseline.
-*   **Key Metric:** Look for `Val Q90` and `Val Q95` in the training logs.
+*   **Key Metrics:** Q50 / Q90 / Q99 for plan-prediction; Spearman / Kendall / pairwise-acc for ranking; end-to-end runtime for LIMAO steering.
 
 ## 2. Ablation Studies (Architecture Choices)
 

@@ -4,3 +4,13 @@ data/runs/
 
 # 结果
 results/
+
+CLAUDE.md
+
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 其他材料：不入库
+review/
