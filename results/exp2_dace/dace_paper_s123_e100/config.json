@@ -1,0 +1,34 @@
+{
+  "experiment": "exp2_dace",
+  "out_dir": "results/exp2_dace/dace_paper_s123_e100",
+  "args": {
+    "root_only": false,
+    "data_dir": "data/dace/workload1",
+    "split": "paper",
+    "split_seed": 1,
+    "val_frac": 0.1,
+    "limit": null,
+    "no_cache": false,
+    "epochs": 100,
+    "bs": 512,
+    "lr": 0.001,
+    "seed": 123,
+    "ckpt": null,
+    "select": "last",
+    "device": "cuda",
+    "out": null,
+    "tag": "e100",
+    "smoke": false,
+    "use_cache": true
+  },
+  "torch": "2.10.0+cu128",
+  "started": "2026-09-16T05:39:15",
+  "model": "DACE",
+  "hparams": {
+    "hidden_dim": 128,
+    "mlp_activation": "ReLU",
+    "transformer_activation": "gelu",
+    "mlp_dropout": 0.3,
+    "transformer_dropout": 0.2
+  }
+}

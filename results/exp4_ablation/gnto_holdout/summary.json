@@ -1,0 +1,134 @@
+{
+  "model": "GNTO",
+  "params": {
+    "total": 302613,
+    "trainable": 302613
+  },
+  "qerror": {
+    "val": {
+      "n": 10000,
+      "q50": 1.0762693699846588,
+      "q75": 1.2092631536348872,
+      "q90": 2.041378331334783,
+      "q95": 3.275341052247631,
+      "q99": 8.010070748549284,
+      "q_mean": 1.5526726949573566,
+      "spearman": 0.9965865306579695,
+      "kendall": 0.9583225892860544,
+      "pairwise_acc": 0.979087908790879
+    },
+    "job-light": {
+      "n": 70,
+      "q50": 1.451089054413142,
+      "q75": 2.9610159102459,
+      "q90": 26.953787186771535,
+      "q95": 45.75849194299083,
+      "q99": 94.9309757132003,
+      "q_mean": 8.585535773821002,
+      "spearman": 0.9396728195258508,
+      "kendall": 0.810351966873706,
+      "pairwise_acc": 0.905175983436853
+    },
+    "synthetic": {
+      "n": 500,
+      "q50": 1.0697013435346245,
+      "q75": 1.1863768383114157,
+      "q90": 1.8538918498862338,
+      "q95": 4.051672241862516,
+      "q99": 12.20250427604953,
+      "q_mean": 1.5521450682964981,
+      "spearman": 0.9943210970118007,
+      "kendall": 0.9526008224514824,
+      "pairwise_acc": 0.9764555008966948
+    }
+  },
+  "train": {
+    "trained_here": true,
+    "select": "q90",
+    "epochs": 100,
+    "best_epoch": 60,
+    "best_metric": 2.041378302828224
+  },
+  "timing_s": {},
+  "finished": "2026-09-12T06:53:50",
+  "holdout_joins": [
+    "ci.movie_id = mc.movie_id",
+    "mi.movie_id = mi_idx.movie_id",
+    "mi_idx.movie_id = mk.movie_id"
+  ],
+  "preset": "gnto",
+  "gnto_config": {
+    "node": {
+      "kind": "queryformer",
+      "out_dim": 64,
+      "dropout": 0.0,
+      "activation": "relu",
+      "in_dim": null,
+      "hidden_dim": 64,
+      "num_layers": 2,
+      "norm": "layer",
+      "num_node_types": 32,
+      "num_cols": 64,
+      "num_ops": 8,
+      "type_dim": 16,
+      "num_numeric": 2,
+      "numeric_log1p": true,
+      "numeric_norm": "batch",
+      "numeric_dim": 8,
+      "pred_slots": 3,
+      "pred_col_dim": 16,
+      "pred_op_dim": 8,
+      "pred_dim": 32,
+      "pred_pool": "sum",
+      "embed_size": 64,
+      "vocab": {
+        "types": 13,
+        "tables": 7,
+        "joins": 16,
+        "columns": 21,
+        "ops": 4
+      },
+      "use_hist": true,
+      "use_sample": true,
+      "bin_number": 50,
+      "plan_rows": true,
+      "join_encoding": "columns"
+    },
+    "graph": {
+      "conv": "gatv2",
+      "num_layers": 3,
+      "hidden_dim": 64,
+      "out_dim": 64,
+      "heads": [
+        4,
+        2,
+        1
+      ],
+      "concat_last": false,
+      "edge_mode": "as_is",
+      "self_loops": true,
+      "virtual_node": false,
+      "residual": true,
+      "norm": "layer",
+      "activation": "elu",
+      "dropout": 0.0,
+      "attn_dropout": 0.0,
+      "edge_dropout": 0.0,
+      "jk": "last"
+    },
+    "readout": {
+      "pooling": "mean",
+      "gate_hidden": 0
+    },
+    "head": {
+      "kind": "resmlp",
+      "hidden_dim": 64,
+      "num_blocks": 2,
+      "dropout": 0.0,
+      "out_dim": 1,
+      "out_activation": "sigmoid"
+    },
+    "name": "qf_v3_joincols",
+    "notes": "qf_v3 + join = f(col_left, col_right)"
+  }
+}

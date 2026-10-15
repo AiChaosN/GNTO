@@ -1,0 +1,16 @@
+{
+  "model": "gnto",
+  "seed": 4,
+  "passes": 30,
+  "explore": "bootstrap",
+  "n_queries": 52,
+  "last5_geo_speedup": 1.138336018650323,
+  "last5_total_s": 18.95765487841563,
+  "default_total_s": 22.392874119919725,
+  "oracle_total_s": 18.422709456062876,
+  "oracle_geo_speedup": 1.2262428910230716,
+  "cumulative_total_s": 705.8007461857633,
+  "cumulative_default_s": 671.7862235975917,
+  "first_pass_at_least_default": 1,
+  "finished": "2026-10-05T06:33:31"
+}

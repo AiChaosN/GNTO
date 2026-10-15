@@ -1,0 +1,27 @@
+{
+  "experiment": "exp3_e2e",
+  "out_dir": "results/exp3_e2e/gnto_kfold_rank",
+  "args": {
+    "model": "gnto",
+    "folds": 5,
+    "seed": 42,
+    "epochs": 100,
+    "bs": 128,
+    "lr": 0.001,
+    "preset": "dace_zero_shot",
+    "set": [],
+    "rank_weight": 1.0,
+    "rank_min_gap": 0.1,
+    "queries_per_batch": 3,
+    "max_runtime": 32000.0,
+    "limit_queries": null,
+    "device": "cuda",
+    "hint_plans": "data/e2e/hint_plans_job112",
+    "out": null,
+    "tag": "rank"
+  },
+  "started": "2026-09-16T07:53:40",
+  "steerer": "gnto_kfold",
+  "n_queries": 112,
+  "n_plans": 5397
+}

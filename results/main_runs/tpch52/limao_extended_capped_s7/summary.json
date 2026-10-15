@@ -1,0 +1,325 @@
+{
+  "steerer": "limao_kfold",
+  "n_queries": 52,
+  "total_runtime_ms": 38916.311212815344,
+  "pg_default_total_ms": 22392.874119919725,
+  "oracle_total_ms": 18422.709456062876,
+  "speedup_vs_pg_default": 0.5754110146119304,
+  "runtime_vs_oracle": 2.1124097574044987,
+  "mean_rel_regret": 2.6347340851288545,
+  "median_rel_regret": 1.4031821984757586,
+  "p90_rel_regret": 5.885437745003204,
+  "max_rel_regret": 15.565368057415107,
+  "wins_vs_pg_default": 2,
+  "losses_vs_pg_default": 30,
+  "regressions_2x": 15,
+  "oracle_hits": 19,
+  "rel_speedup_geomean": 0.6718326838155966,
+  "rel_speedup_geomean_trimmed": 0.6879444693771963,
+  "rel_speedup_mean": 0.7781219564999057,
+  "rel_speedup_p10": 0.26662145061816417,
+  "rel_speedup_p25": 0.4768264649882584,
+  "rel_speedup_p50": 0.9175645957871318,
+  "rel_speedup_p75": 1.0,
+  "rel_speedup_p90": 1.0,
+  "rel_speedup_min": 0.21164273684519377,
+  "better_n": 1,
+  "worse_n": 28,
+  "tie_n": 23,
+  "better_pct": 1.9230769230769231,
+  "worse_pct": 53.84615384615385,
+  "tie_pct": 44.230769230769226,
+  "tol": 0.05,
+  "moved_n": 32,
+  "moved_better_pct": 3.125,
+  "moved_worse_pct": 87.5,
+  "wilcoxon_p_vs_pg": 6.592292025466918e-06,
+  "sign_test_p": 1.1175870895385742e-07,
+  "template_cluster_interval": {
+    "geomean": 0.6718326838155966,
+    "ci95_low": 0.4912328313970873,
+    "ci95_high": 0.887809269661269,
+    "n_queries": 52,
+    "n_templates": 13,
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 0,
+    "resampling_unit": "template",
+    "weighting": "query",
+    "conditional_on_fitted_models": true,
+    "template_equal_weight_geomean": 0.6718326838155966,
+    "template_wilcoxon_p": 0.0234375
+  },
+  "by_join_bucket": {
+    "1-2": {
+      "n": 28,
+      "total_runtime_ms": 13256.464160978794,
+      "pg_default_total_ms": 8448.242434009444,
+      "oracle_total_ms": 8391.658807988279,
+      "speedup_vs_pg_default": 0.6372922923804492,
+      "mean_rel_regret": 1.5662866382413163,
+      "rel_speedup_geomean": 0.7670153776919963,
+      "rel_speedup_p50": 1.0,
+      "better_n": 1,
+      "worse_n": 10,
+      "tie_n": 17
+    },
+    "3-4": {
+      "n": 12,
+      "total_runtime_ms": 14996.394840884022,
+      "pg_default_total_ms": 7530.380820971914,
+      "oracle_total_ms": 5430.091180081945,
+      "speedup_vs_pg_default": 0.50214607583165,
+      "mean_rel_regret": 2.462568404757247,
+      "rel_speedup_geomean": 0.6703265799966003,
+      "rel_speedup_p50": 0.9599813430580084,
+      "better_n": 0,
+      "worse_n": 6,
+      "tie_n": 6
+    },
+    "5+": {
+      "n": 12,
+      "total_runtime_ms": 10663.452210952528,
+      "pg_default_total_ms": 6414.250864938367,
+      "oracle_total_ms": 4600.959467992652,
+      "speedup_vs_pg_default": 0.6015172889648469,
+      "mean_rel_regret": 5.2999438082380514,
+      "rel_speedup_geomean": 0.4942753449120667,
+      "rel_speedup_p50": 0.6936577512651947,
+      "better_n": 0,
+      "worse_n": 12,
+      "tie_n": 0
+    }
+  },
+  "timeout_picks": 0,
+  "timeout_pick_pct": 0.0,
+  "params": {
+    "total": 788164,
+    "trainable": 788164
+  },
+  "finished": "2026-09-30T09:40:10",
+  "prediction_quality": {
+    "n_plans": 643,
+    "censored_plans_excluded_from_accuracy": 0,
+    "q50": 3.287782760919618,
+    "q90": 19.871023687288776,
+    "q99": 83.57568605278492,
+    "q_mean": 14.726893792557101,
+    "per_query_spearman_mean": 0.24818380324994457,
+    "per_query_spearman_median": 0.3730837789661319,
+    "per_query_kendall_mean": 0.18030456385719545,
+    "global_spearman": 0.29492300921609577
+  },
+  "model": "limao",
+  "folds": 5,
+  "seed": 7,
+  "split_seed": 42,
+  "plan_representation": "ordered-binary-v1",
+  "native_tree_adapter": "extended-tree-v1",
+  "candidate_policy": "complete",
+  "deduplicate": true,
+  "epochs": 100,
+  "native_timeout_target": "budget-capped",
+  "rank_weight": 0.0,
+  "rank_space": "log",
+  "drop_features": "",
+  "features": "dace",
+  "group": "template",
+  "extra_train": "",
+  "preset": null,
+  "overrides": [],
+  "fold_info": [
+    {
+      "fold": 0,
+      "n_train": 534,
+      "n_test": 109,
+      "train_s": 44.592196226119995,
+      "score_s": 0.19199633598327637,
+      "epochs_run": 40,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s7/limao_folds/fold0_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 21360,
+        "b0": 160,
+        "b1": 21200,
+        "c0": 2040,
+        "c1": 15000,
+        "c2": 4320
+      },
+      "module_usage_test_first": {
+        "a0": 12,
+        "b1": 12,
+        "c1": 8,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 109,
+        "b1": 109,
+        "c1": 81,
+        "c2": 28
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 1,
+      "n_train": 443,
+      "n_test": 200,
+      "train_s": 29.62429118156433,
+      "score_s": 0.35903382301330566,
+      "epochs_run": 32,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s7/limao_folds/fold1_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 14176,
+        "b0": 256,
+        "b1": 13920,
+        "c0": 1504,
+        "c1": 10496,
+        "c2": 2176
+      },
+      "module_usage_test_first": {
+        "a0": 12,
+        "b1": 12,
+        "c1": 8,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 200,
+        "b0": 8,
+        "b1": 192,
+        "c0": 9,
+        "c1": 159,
+        "c2": 32
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 2,
+      "n_train": 515,
+      "n_test": 128,
+      "train_s": 42.252086877822876,
+      "score_s": 0.2025010585784912,
+      "epochs_run": 39,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s7/limao_folds/fold2_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 20085,
+        "b0": 312,
+        "b1": 19773,
+        "c0": 2301,
+        "c1": 13260,
+        "c2": 4524
+      },
+      "module_usage_test_first": {
+        "a0": 12,
+        "b1": 12,
+        "c1": 8,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 128,
+        "b0": 8,
+        "b1": 120,
+        "c1": 100,
+        "c2": 28
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 3,
+      "n_train": 547,
+      "n_test": 96,
+      "train_s": 37.561322927474976,
+      "score_s": 0.162644624710083,
+      "epochs_run": 32,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s7/limao_folds/fold3_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 17504,
+        "b0": 256,
+        "b1": 17248,
+        "c0": 992,
+        "c1": 12288,
+        "c2": 4224
+      },
+      "module_usage_test_first": {
+        "a0": 8,
+        "b1": 8,
+        "c1": 8
+      },
+      "module_usage_test_per_plan": {
+        "a0": 96,
+        "b1": 96,
+        "c0": 12,
+        "c1": 70,
+        "c2": 14
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 4,
+      "n_train": 533,
+      "n_test": 110,
+      "train_s": 28.83424735069275,
+      "score_s": 0.2467637062072754,
+      "epochs_run": 26,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s7/limao_folds/fold4_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 13858,
+        "b0": 520,
+        "b1": 13338,
+        "c0": 1456,
+        "c1": 8658,
+        "c2": 3744
+      },
+      "module_usage_test_first": {
+        "a0": 8,
+        "b1": 8,
+        "c1": 8
+      },
+      "module_usage_test_per_plan": {
+        "a0": 110,
+        "b0": 4,
+        "b1": 106,
+        "c1": 87,
+        "c2": 23
+      },
+      "assign": "per_plan"
+    }
+  ]
+}

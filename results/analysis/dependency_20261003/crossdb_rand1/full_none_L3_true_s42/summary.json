@@ -1,0 +1,269 @@
+{
+  "model": "GNTO",
+  "params": {
+    "total": 39873,
+    "trainable": 39873
+  },
+  "split": {
+    "name": "rand1",
+    "train_ids": [
+      2,
+      3,
+      4,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14,
+      18
+    ],
+    "test_ids": [
+      0,
+      1,
+      5,
+      6,
+      9,
+      11,
+      15,
+      16,
+      17,
+      19
+    ],
+    "train_dbs": [
+      "baseball",
+      "basketball",
+      "carcinogenesis",
+      "employee",
+      "fhnk",
+      "geneea",
+      "hepatitis",
+      "imdb_full",
+      "movielens",
+      "tpc_h"
+    ],
+    "test_dbs": [
+      "accidents",
+      "airline",
+      "consumer",
+      "credit",
+      "financial",
+      "genome",
+      "seznam",
+      "ssb",
+      "tournament",
+      "walmart"
+    ],
+    "n_train": 54000,
+    "n_val": 6000
+  },
+  "statistics_scope": "train",
+  "cache_id": "dfd3595e3ddae1a0c5c2",
+  "qerror": {
+    "accidents": {
+      "n": 5000,
+      "q50": 1.2831895577207626,
+      "q75": 2.027792162151468,
+      "q90": 4.546935565553241,
+      "q95": 7.560902345766982,
+      "q99": 19.357314610062176,
+      "q_mean": 2.437682572854495,
+      "q_max": 50.5452034695248
+    },
+    "airline": {
+      "n": 5000,
+      "q50": 1.5948368809033402,
+      "q75": 2.3642587454504396,
+      "q90": 3.4997178464247543,
+      "q95": 4.283141549738339,
+      "q99": 5.440628308750138,
+      "q_mean": 1.968008110374457,
+      "q_max": 6.098638830618375
+    },
+    "consumer": {
+      "n": 5000,
+      "q50": 1.1531150114601783,
+      "q75": 1.3327746862145204,
+      "q90": 1.659418435832837,
+      "q95": 1.9496434108050527,
+      "q99": 2.758641441159232,
+      "q_mean": 1.274855463573143,
+      "q_max": 5.146658442652216
+    },
+    "credit": {
+      "n": 5000,
+      "q50": 1.194732168623915,
+      "q75": 1.4878381673375807,
+      "q90": 2.771805768607576,
+      "q95": 4.84069518902251,
+      "q99": 10.788504079163177,
+      "q_mean": 1.8664715799511862,
+      "q_max": 178.30497892193097
+    },
+    "financial": {
+      "n": 5000,
+      "q50": 1.1558989993667605,
+      "q75": 1.3470532823853978,
+      "q90": 3.940045810849435,
+      "q95": 6.921216881935932,
+      "q99": 10.728813829778241,
+      "q_mean": 1.92808743747242,
+      "q_max": 61.74386088238548
+    },
+    "genome": {
+      "n": 5000,
+      "q50": 1.1887225014000475,
+      "q75": 1.473876731002144,
+      "q90": 2.0875350176490373,
+      "q95": 2.9407828068604314,
+      "q99": 4.483226512874169,
+      "q_mean": 1.451162853345477,
+      "q_max": 28.410332338308457
+    },
+    "seznam": {
+      "n": 5000,
+      "q50": 1.2973939855521501,
+      "q75": 1.6578095833109692,
+      "q90": 2.2298952706609176,
+      "q95": 2.8054757145014193,
+      "q99": 4.743595717777889,
+      "q_mean": 1.538311790029512,
+      "q_max": 16.13171950941936
+    },
+    "ssb": {
+      "n": 5000,
+      "q50": 1.1713848539490639,
+      "q75": 1.2850105541772074,
+      "q90": 1.4262855903115503,
+      "q95": 1.549741011592932,
+      "q99": 1.9595391546569392,
+      "q_mean": 1.2120119585011795,
+      "q_max": 2.913331196456334
+    },
+    "tournament": {
+      "n": 5000,
+      "q50": 1.325354300683887,
+      "q75": 2.0093319253788335,
+      "q90": 4.504034458560168,
+      "q95": 8.637666668089796,
+      "q99": 32.6751639023171,
+      "q_mean": 2.951921545272339,
+      "q_max": 144.51161714546134
+    },
+    "walmart": {
+      "n": 5000,
+      "q50": 1.1489294160134158,
+      "q75": 1.2692785994399083,
+      "q90": 1.385248031863676,
+      "q95": 1.5770652470191688,
+      "q99": 2.701654486828012,
+      "q_mean": 1.2195640424677767,
+      "q_max": 7.803222306367111
+    }
+  },
+  "avg": {
+    "q50": 1.2513557675673521,
+    "q75": 1.6255024436848469,
+    "q90": 2.805092179631319,
+    "q95": 4.306633082533256,
+    "q99": 9.56370820433671,
+    "q_mean": 1.7848077353841987
+  },
+  "train": {
+    "best_epoch": 99,
+    "best_metric": 1.5005220945313376,
+    "select": "last",
+    "epochs": 100,
+    "ckpt": "results/analysis/dependency_20261003/crossdb_rand1/full_none_L3_true_s42/best_model.pt",
+    "trained_here": true
+  },
+  "timing_s": {
+    "featurize_s": 6.157681941986084,
+    "train_s": 338.18171095848083
+  },
+  "finished": "2026-10-03T07:07:19",
+  "preset": "dace_zero_shot",
+  "overrides": [
+    "graph.conv=none",
+    "graph.num_layers=3",
+    "graph.heads=1"
+  ],
+  "gnto_config": {
+    "node": {
+      "kind": "mlp",
+      "out_dim": 64,
+      "dropout": 0.0,
+      "activation": "relu",
+      "in_dim": 22,
+      "hidden_dim": 64,
+      "num_layers": 2,
+      "norm": "layer",
+      "num_node_types": 32,
+      "num_cols": 64,
+      "num_ops": 8,
+      "type_dim": 16,
+      "num_numeric": 2,
+      "numeric_log1p": true,
+      "numeric_norm": "batch",
+      "numeric_dim": 8,
+      "pred_slots": 3,
+      "pred_col_dim": 16,
+      "pred_op_dim": 8,
+      "pred_dim": 32,
+      "pred_pool": "sum",
+      "embed_size": 64,
+      "vocab": {
+        "types": 20,
+        "tables": 20,
+        "joins": 10,
+        "columns": 30,
+        "ops": 10
+      },
+      "use_hist": true,
+      "use_sample": true,
+      "bin_number": 50,
+      "plan_rows": true,
+      "join_encoding": "id"
+    },
+    "graph": {
+      "conv": "none",
+      "num_layers": 3,
+      "hidden_dim": 64,
+      "out_dim": 64,
+      "heads": 1,
+      "concat_last": false,
+      "edge_mode": "as_is",
+      "self_loops": true,
+      "virtual_node": false,
+      "residual": true,
+      "norm": "layer",
+      "activation": "elu",
+      "dropout": 0.1,
+      "attn_dropout": 0.1,
+      "edge_dropout": 0.0,
+      "jk": "last"
+    },
+    "readout": {
+      "pooling": "mean",
+      "gate_hidden": 0
+    },
+    "head": {
+      "kind": "resmlp",
+      "hidden_dim": 64,
+      "num_blocks": 2,
+      "dropout": 0.1,
+      "out_dim": 1,
+      "out_activation": "sigmoid"
+    },
+    "name": "dace_zero_shot",
+    "notes": "GNTO_DACE_Model equivalent; set node.in_dim = num_node_types + 2"
+  },
+  "study": {
+    "features": "full",
+    "conv": "none",
+    "layers": 3,
+    "heads": 1,
+    "virtual_node": false,
+    "topology": "true"
+  }
+}

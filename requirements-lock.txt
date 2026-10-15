@@ -1,0 +1,14 @@
+# Exact versions of the environment the results were produced with (Python 3.13.11).
+# Install the matching PyTorch CPU/CUDA wheel for the host before this file.
+numpy==2.4.6
+pandas==3.0.3
+torch==2.10.0
+torch-geometric==2.7.0
+scipy==1.17.1
+scikit-learn==1.8.0
+matplotlib==3.10.9
+tqdm==4.67.1
+loralib==0.1.2
+kmodes==0.12.2
+psycopg2-binary==2.9.12
+pytest==9.1.1

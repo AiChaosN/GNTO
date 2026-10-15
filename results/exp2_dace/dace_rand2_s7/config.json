@@ -1,0 +1,32 @@
+{
+  "experiment": "exp2_dace",
+  "out_dir": "results/exp2_dace/dace_rand2_s7",
+  "args": {
+    "data_dir": "data/dace/workload1",
+    "split": "rand",
+    "split_seed": 2,
+    "val_frac": 0.1,
+    "limit": null,
+    "no_cache": false,
+    "epochs": 10,
+    "bs": 512,
+    "lr": 0.001,
+    "seed": 7,
+    "ckpt": null,
+    "device": "cuda",
+    "out": null,
+    "tag": "",
+    "smoke": false,
+    "use_cache": true
+  },
+  "torch": "2.10.0+cu128",
+  "started": "2026-09-12T09:08:03",
+  "model": "DACE",
+  "hparams": {
+    "hidden_dim": 128,
+    "mlp_activation": "ReLU",
+    "transformer_activation": "gelu",
+    "mlp_dropout": 0.3,
+    "transformer_dropout": 0.2
+  }
+}

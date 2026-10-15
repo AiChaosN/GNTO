@@ -1,0 +1,140 @@
+{
+  "model": "GNTO",
+  "params": {
+    "total": 190229,
+    "trainable": 190229
+  },
+  "qerror": {
+    "val": {
+      "n": 10000,
+      "q50": 1.0966520973527663,
+      "q75": 1.2384593901824754,
+      "q90": 2.0188827612784044,
+      "q95": 3.329187782264772,
+      "q99": 8.387179571113519,
+      "q_mean": 1.5566178076407264,
+      "spearman": 0.9963565651180232,
+      "kendall": 0.9550294804226762,
+      "pairwise_acc": 0.9771177117711771
+    },
+    "job-light": {
+      "n": 70,
+      "q50": 1.4063858249610484,
+      "q75": 3.9101634968221353,
+      "q90": 23.70780812078172,
+      "q95": 39.788487547852164,
+      "q99": 111.67901419860635,
+      "q_mean": 8.787212595507786,
+      "spearman": 0.933444143119587,
+      "kendall": 0.7937888198757765,
+      "pairwise_acc": 0.8968944099378882
+    },
+    "synthetic": {
+      "n": 500,
+      "q50": 1.0864701599941613,
+      "q75": 1.227953220636917,
+      "q90": 1.880520808597088,
+      "q95": 3.3388833363549173,
+      "q99": 10.877652417595638,
+      "q_mean": 1.5050961047548006,
+      "spearman": 0.9935176939152004,
+      "kendall": 0.947586964284021,
+      "pairwise_acc": 0.9733796876095822
+    }
+  },
+  "train": {
+    "best_epoch": 40,
+    "best_metric": 2.0188827612784044,
+    "select": "q90",
+    "epochs": 100,
+    "ckpt": "results/exp1_qerror/gnto_tcnn_attn/best_model.pt",
+    "trained_here": true
+  },
+  "timing_s": {
+    "featurize_s": 16.662171125411987,
+    "train_s": 424.553245306015,
+    "infer_val_s": 0.17815232276916504,
+    "infer_job-light_s": 0.004334449768066406,
+    "infer_synthetic_s": 0.009870767593383789
+  },
+  "finished": "2026-09-13T02:40:54",
+  "preset": "gnto",
+  "overrides": [
+    "graph.conv=tcnn_attn"
+  ],
+  "holdout_joins": [],
+  "gnto_config": {
+    "node": {
+      "kind": "queryformer",
+      "out_dim": 64,
+      "dropout": 0.0,
+      "activation": "relu",
+      "in_dim": null,
+      "hidden_dim": 64,
+      "num_layers": 2,
+      "norm": "layer",
+      "num_node_types": 32,
+      "num_cols": 64,
+      "num_ops": 8,
+      "type_dim": 16,
+      "num_numeric": 2,
+      "numeric_log1p": true,
+      "numeric_norm": "batch",
+      "numeric_dim": 8,
+      "pred_slots": 3,
+      "pred_col_dim": 16,
+      "pred_op_dim": 8,
+      "pred_dim": 32,
+      "pred_pool": "sum",
+      "embed_size": 64,
+      "vocab": {
+        "types": 13,
+        "tables": 7,
+        "joins": 16,
+        "columns": 21,
+        "ops": 4
+      },
+      "use_hist": true,
+      "use_sample": true,
+      "bin_number": 50,
+      "plan_rows": true,
+      "join_encoding": "columns"
+    },
+    "graph": {
+      "conv": "tcnn_attn",
+      "num_layers": 3,
+      "hidden_dim": 64,
+      "out_dim": 64,
+      "heads": [
+        4,
+        2,
+        1
+      ],
+      "concat_last": false,
+      "edge_mode": "as_is",
+      "self_loops": true,
+      "virtual_node": false,
+      "residual": true,
+      "norm": "layer",
+      "activation": "elu",
+      "dropout": 0.0,
+      "attn_dropout": 0.0,
+      "edge_dropout": 0.0,
+      "jk": "last"
+    },
+    "readout": {
+      "pooling": "mean",
+      "gate_hidden": 0
+    },
+    "head": {
+      "kind": "resmlp",
+      "hidden_dim": 64,
+      "num_blocks": 2,
+      "dropout": 0.0,
+      "out_dim": 1,
+      "out_activation": "sigmoid"
+    },
+    "name": "gnto",
+    "notes": "default GNTO: qf features + plan rows, join = f(col_left, col_right)"
+  }
+}

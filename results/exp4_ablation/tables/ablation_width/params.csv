@@ -1,0 +1,6 @@
+model,dir,total_params,trainable_params
+default (256/128/64) L3,gnto,302613,302613
+w64 L24,gnto_w64_L24,333269,333269
+w32 L24,gnto_w32_L24,183285,183285
+w32 L48,gnto_w32_L48,237045,237045
+w16 L64,gnto_w16_L64,165861,165861

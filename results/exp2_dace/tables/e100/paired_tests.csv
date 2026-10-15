@@ -1,0 +1,16 @@
+model_A,model_B (reference),metric,A_avg,B_avg,A_better_dbs,n_dbs,wilcoxon_p
+"GNTO default (100 ep, last epoch)","DACE (100 ep, last epoch)",q50,1.2696077473451077,1.3694762724373306,10,10,0.001953125
+"GNTO default (100 ep, last epoch)","DACE (100 ep, last epoch)",q90,3.1054488917593637,3.5440388824858067,6,10,0.375
+"GNTO default (100 ep, last epoch)","DACE (100 ep, last epoch)",q99,13.451902799210723,14.607727882572728,6,10,0.845703125
+"GNTO default (100 ep, last epoch)","DACE (100 ep, last epoch)",mean,1.9919608290343684,2.2090977112676873,6,10,0.193359375
+"GNTO default (100 ep, last epoch)","DACE (100 ep, last epoch)",geo,1.5189496512090614,1.6299664046795486,6,10,0.130859375
+"GNTO w64_L16 (100 ep, last epoch)","DACE (100 ep, last epoch)",q50,1.2873460846398919,1.3694762724373306,9,10,0.00390625
+"GNTO w64_L16 (100 ep, last epoch)","DACE (100 ep, last epoch)",q90,3.1262330806152283,3.5440388824858067,6,10,0.193359375
+"GNTO w64_L16 (100 ep, last epoch)","DACE (100 ep, last epoch)",q99,13.827228624609855,14.607727882572728,6,10,0.4921875
+"GNTO w64_L16 (100 ep, last epoch)","DACE (100 ep, last epoch)",mean,2.029456701281899,2.2090977112676873,6,10,0.16015625
+"GNTO w64_L16 (100 ep, last epoch)","DACE (100 ep, last epoch)",geo,1.5273418814991069,1.6299664046795486,7,10,0.02734375
+"GNTO w64_L16 (100 ep, last epoch)","GNTO default (100 ep, last epoch)",q50,1.2873460846398919,1.2696077473451077,4,10,0.10546875
+"GNTO w64_L16 (100 ep, last epoch)","GNTO default (100 ep, last epoch)",q90,3.1262330806152283,3.1054488917593637,5,10,0.921875
+"GNTO w64_L16 (100 ep, last epoch)","GNTO default (100 ep, last epoch)",q99,13.827228624609855,13.451902799210723,7,10,0.6953125
+"GNTO w64_L16 (100 ep, last epoch)","GNTO default (100 ep, last epoch)",mean,2.029456701281899,1.9919608290343684,5,10,0.556640625
+"GNTO w64_L16 (100 ep, last epoch)","GNTO default (100 ep, last epoch)",geo,1.5273418814991069,1.5189496512090614,4,10,0.556640625

@@ -1,0 +1,15 @@
+{
+  "experiment": "exp3_e2e",
+  "out_dir": "results/exp3_e2e/bao",
+  "args": {
+    "ckpt": null,
+    "train_parts": "0-17",
+    "val_parts": "18-19",
+    "seed": 42,
+    "hint_plans": "data/e2e/hint_plans_job112",
+    "out": null,
+    "tag": ""
+  },
+  "started": "2026-09-12T09:47:27",
+  "steerer": "bao"
+}

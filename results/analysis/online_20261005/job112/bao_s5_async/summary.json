@@ -1,0 +1,18 @@
+{
+  "model": "bao",
+  "seed": 5,
+  "passes": 30,
+  "explore": "bootstrap",
+  "schedule": "async",
+  "n_retrain": 17,
+  "n_queries": 112,
+  "last5_geo_speedup": 1.2325761880496104,
+  "last5_total_s": 51.907355947536416,
+  "default_total_s": 93.51885607180884,
+  "oracle_total_s": 36.40397922991542,
+  "oracle_geo_speedup": 1.6373221082751854,
+  "cumulative_total_s": 2290.414775601821,
+  "cumulative_default_s": 2805.5656821542652,
+  "first_pass_at_least_default": 1,
+  "finished": "2026-10-08T12:29:09"
+}

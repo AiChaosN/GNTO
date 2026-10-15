@@ -1,0 +1,7 @@
+{
+  "training_plans": "zero-shot subset",
+  "trimmed_to_first_n": {
+    "imdb_full": 5000,
+    "tpc_h": 5000
+  }
+}

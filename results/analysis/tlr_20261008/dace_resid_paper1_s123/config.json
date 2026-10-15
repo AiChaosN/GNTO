@@ -1,0 +1,36 @@
+{
+  "experiment": "exp2_dace",
+  "out_dir": "results/analysis/tlr_20261008/dace_resid_paper1_s123",
+  "args": {
+    "root_only": false,
+    "data_dir": "data/dace/workload1",
+    "split": "paper",
+    "split_seed": 1,
+    "statistics": "train",
+    "val_frac": 0.1,
+    "limit": null,
+    "no_cache": true,
+    "epochs": 100,
+    "bs": 512,
+    "lr": 0.001,
+    "seed": 123,
+    "ckpt": null,
+    "select": "last",
+    "device": "cpu",
+    "threads": 4,
+    "out": "results/analysis/tlr_20261008/dace_resid_paper1_s123",
+    "tag": "",
+    "smoke": false,
+    "use_cache": false
+  },
+  "torch": "2.10.0+cu128",
+  "started": "2026-10-14T12:14:34",
+  "model": "DACE",
+  "hparams": {
+    "hidden_dim": 128,
+    "mlp_activation": "ReLU",
+    "transformer_activation": "gelu",
+    "mlp_dropout": 0.3,
+    "transformer_dropout": 0.2
+  }
+}

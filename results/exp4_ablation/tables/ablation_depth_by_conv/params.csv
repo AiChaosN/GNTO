@@ -1,0 +1,7 @@
+model,dir,total_params,trainable_params
+GAT L3,gnto,302613,302613
+GAT L7,gnto_L7,989909,989909
+GCN L3,gnto_gcn,140309,140309
+GCN L7,gnto_gcn_L7,157461,157461
+TCNN L3,gnto_tcnn,164885,164885
+TCNN L7,gnto_tcnn_L7,214805,214805

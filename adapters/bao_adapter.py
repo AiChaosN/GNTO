@@ -1,10 +1,10 @@
 """
-Bao Adapter - 适配 Bao (SIGMOD 2021) tree-CNN 成本预测模型,作为 GNTO 的对比 baseline。
+Bao adapter - wraps Bao's (SIGMOD 2021) tree-CNN cost model as a GNTO baseline.
 
-Bao 用自己的 TreeFeaturizer (节点 one-hot + 归一化 cost/rows) +
-BaoNet (BinaryTreeConv) 做成本预测,不走 PyG。
+Bao uses its own TreeFeaturizer (node one-hot + normalised cost/rows) +
+BaoNet (BinaryTreeConv) for cost prediction; it does not use PyG.
 
-用法:
+Usage:
     from adapters.bao_adapter import (
         BaoCostPredictor, plans_from_qf_df,
         evaluate_bao, calc_q_error
@@ -28,7 +28,6 @@ def get_bao_path():
     """Find Bao repo (BaoForPostgreSQL/bao_server)."""
     candidates = [
         os.path.join(_gnto_root, "..", "BaoForPostgreSQL"),
-        "/home/AiChaosN/Project/Workspace/01_Research/BaoForPostgreSQL",
     ]
     for c in candidates:
         p = os.path.abspath(c)
@@ -36,7 +35,7 @@ def get_bao_path():
             return p
     raise FileNotFoundError(
         "BaoForPostgreSQL not found. Expected as sibling directory of GNTO "
-        "or at /home/AiChaosN/Project/Workspace/01_Research/BaoForPostgreSQL"
+        "(../BaoForPostgreSQL); upstream: https://github.com/learnedsystems/BaoForPostgreSQL"
     )
 
 
@@ -142,8 +141,11 @@ class BaoCostPredictor:
         epochs: max epochs (Bao's own early-stopping condition still applies).
     """
 
-    def __init__(self, verbose=False, epochs=100):
+    def __init__(self, verbose=False, epochs=100, extended_tree=False):
         BaoRegression = _load_bao_modules()
+        from adapters.native_tree_compat import install_extended_tree_builder
+        self._extended_tree = extended_tree
+        install_extended_tree_builder(sys.modules["bao_featurize"], enabled=extended_tree)
         self._BaoRegression = BaoRegression
         self._reg = BaoRegression(verbose=verbose)
         self._verbose = verbose
@@ -155,6 +157,8 @@ class BaoCostPredictor:
             print(f"[bao_adapter] Note: Bao's BaoRegression hardcodes 100 epochs; "
                   f"requested {epochs} ignored. Patch upstream if needed.")
         targets = np.asarray(targets, dtype=np.float32)
+        from adapters.native_tree_compat import install_extended_tree_builder
+        install_extended_tree_builder(sys.modules["bao_featurize"], enabled=self._extended_tree)
         self._reg.fit(plans, targets)
 
     def predict(self, plans):
@@ -178,7 +182,7 @@ class BaoCostPredictor:
 # ---------------------------------------------------------------------------
 def calc_q_error(preds, targets, percentiles=(50, 75, 90, 95, 99)):
     """Q-Error percentiles, mirroring qf_adapter.calc_q_error."""
-    from utils.metrics import qerror_percentiles
+    from models.gnto.metrics import qerror_percentiles
     q = qerror_percentiles(preds, targets, percentiles=percentiles)
     return np.array([q[f"q{int(pc)}"] for pc in percentiles])
 
@@ -189,7 +193,7 @@ def evaluate_bao(predictor, plans, targets, group_ids=None):
     With group_ids (one per plan, same length as plans), also reports per-query
     Top-1 regret for Bao-style steering evaluation.
     """
-    from utils.metrics import evaluation_summary
+    from models.gnto.metrics import evaluation_summary
     preds = predictor.predict(plans)
     out = {"preds": preds}
     out.update(evaluation_summary(preds, targets, group_ids=group_ids))

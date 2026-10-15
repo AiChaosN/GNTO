@@ -1,0 +1,3 @@
+model,dir,total_params,trainable_params
+QueryFormer,qf,4484519,4484519
+GNTO,gnto,302613,302613

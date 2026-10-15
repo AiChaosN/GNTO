@@ -1,16 +1,24 @@
-# 数据
-data/process/
-data/runs/
-
-# 结果
-results/
-
-CLAUDE.md
-
-
-# Python 缓存
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
 
-# 其他材料：不入库
-review/
+# inputs obtained as described in README.md
+data/train_plan_part*.csv
+data/job-light_plan.csv
+data/synthetic_plan.csv
+data/column_min_max_vals.csv
+data/qf/*
+!data/qf/template_split.json
+data/dace/
+data/e2e/hint_plans*/
+data/process/
+
+# written by the runners
+*.pt
+*.pth
+*.pkl
+bao_model/
+*_out_model/
+log.txt
+*.log
+*.stdout

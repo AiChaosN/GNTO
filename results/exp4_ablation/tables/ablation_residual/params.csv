@@ -1,0 +1,7 @@
+model,dir,total_params,trainable_params
+default L3,gnto,302613,302613
+"default L3, no res",gnto_nores,244821,244821
+w64 L5,gnto_w64_L5,170325,170325
+"w64 L5, no res",gnto_w64_L5_nores,170325,170325
+w64 L24,gnto_w64_L24,333269,333269
+"w64 L24, no res",gnto_w64_L24_nores,333269,333269

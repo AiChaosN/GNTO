@@ -1,0 +1,262 @@
+{
+  "model": "GNTO",
+  "params": {
+    "total": 260225,
+    "trainable": 260225
+  },
+  "split": {
+    "name": "rand1",
+    "train_ids": [
+      2,
+      3,
+      4,
+      7,
+      8,
+      10,
+      12,
+      13,
+      14,
+      18
+    ],
+    "test_ids": [
+      0,
+      1,
+      5,
+      6,
+      9,
+      11,
+      15,
+      16,
+      17,
+      19
+    ],
+    "train_dbs": [
+      "baseball",
+      "basketball",
+      "carcinogenesis",
+      "employee",
+      "fhnk",
+      "geneea",
+      "hepatitis",
+      "imdb_full",
+      "movielens",
+      "tpc_h"
+    ],
+    "test_dbs": [
+      "accidents",
+      "airline",
+      "consumer",
+      "credit",
+      "financial",
+      "genome",
+      "seznam",
+      "ssb",
+      "tournament",
+      "walmart"
+    ],
+    "n_train": 54000,
+    "n_val": 6000
+  },
+  "statistics_scope": "train",
+  "cache_id": "6378427e0231c6ae0d12_tlr",
+  "qerror": {
+    "accidents": {
+      "n": 5000,
+      "q50": 1.311135929409934,
+      "q75": 1.984635890489979,
+      "q90": 4.046952584616324,
+      "q95": 6.957630594999463,
+      "q99": 21.11156597065288,
+      "q_mean": 2.360123499155236,
+      "q_max": 54.937954891383676
+    },
+    "airline": {
+      "n": 5000,
+      "q50": 1.3870082183471437,
+      "q75": 1.6479808420540019,
+      "q90": 1.7948144182663068,
+      "q95": 2.0024548809058715,
+      "q99": 2.4732945954896546,
+      "q_mean": 1.4414764590413491,
+      "q_max": 5.38702637441412
+    },
+    "consumer": {
+      "n": 5000,
+      "q50": 1.167711156333365,
+      "q75": 1.3783572572236542,
+      "q90": 1.732889533434582,
+      "q95": 2.035971333479965,
+      "q99": 2.71301016881002,
+      "q_mean": 1.2985882743605546,
+      "q_max": 5.097480064279457
+    },
+    "credit": {
+      "n": 5000,
+      "q50": 1.1823166491583255,
+      "q75": 1.5039336239326238,
+      "q90": 2.90801282103625,
+      "q95": 5.555184396481504,
+      "q99": 16.39685143882094,
+      "q_mean": 2.025055251113566,
+      "q_max": 169.59556075774137
+    },
+    "financial": {
+      "n": 5000,
+      "q50": 1.2006412526093606,
+      "q75": 1.3724336517569775,
+      "q90": 4.276000545374234,
+      "q95": 7.77451588110402,
+      "q99": 12.114759067935584,
+      "q_mean": 2.044489432351731,
+      "q_max": 54.48468942093074
+    },
+    "genome": {
+      "n": 5000,
+      "q50": 1.166231594176458,
+      "q75": 1.35724019339023,
+      "q90": 1.7323982019926116,
+      "q95": 2.117751524429628,
+      "q99": 3.264532007259772,
+      "q_mean": 1.3206436643441695,
+      "q_max": 14.262831975388593
+    },
+    "seznam": {
+      "n": 5000,
+      "q50": 1.3213237535934024,
+      "q75": 1.6859465082776928,
+      "q90": 2.266005976460548,
+      "q95": 2.8760428674249736,
+      "q99": 4.983202941762621,
+      "q_mean": 1.5645808606094507,
+      "q_max": 15.025198658449634
+    },
+    "ssb": {
+      "n": 5000,
+      "q50": 1.1633163346712612,
+      "q75": 1.2950778040484123,
+      "q90": 1.4497401112597337,
+      "q95": 1.5724162846647498,
+      "q99": 1.982085484723379,
+      "q_mean": 1.2142002167685655,
+      "q_max": 2.608375572778235
+    },
+    "tournament": {
+      "n": 5000,
+      "q50": 1.3037009259771188,
+      "q75": 1.8215742841181863,
+      "q90": 3.839812604594558,
+      "q95": 6.970349437169949,
+      "q99": 22.618073019845614,
+      "q_mean": 2.431892301875385,
+      "q_max": 101.20158348678586
+    },
+    "walmart": {
+      "n": 5000,
+      "q50": 1.1471244936434506,
+      "q75": 1.2726069507978117,
+      "q90": 1.3943712322489688,
+      "q95": 1.4678705052777181,
+      "q99": 2.0070627678942485,
+      "q_mean": 1.1946148542523294,
+      "q_max": 4.05288373390729
+    }
+  },
+  "avg": {
+    "q50": 1.2350510307919822,
+    "q75": 1.531978700608957,
+    "q90": 2.544099802928412,
+    "q95": 3.933018770593784,
+    "q99": 8.966443746319472,
+    "q_mean": 1.6895664813872338
+  },
+  "train": {
+    "best_epoch": 99,
+    "best_metric": 1.3855604567618758,
+    "select": "last",
+    "epochs": 100,
+    "ckpt": "results/analysis/tlr_20261008/gnto_rand1_s7/best_model.pt",
+    "trained_here": true
+  },
+  "timing_s": {
+    "featurize_s": 11.5293869972229,
+    "train_s": 2324.0302274227142,
+    "infer_s": 10.859851837158203
+  },
+  "finished": "2026-10-08T03:17:46",
+  "preset": "dace_zero_shot",
+  "overrides": [],
+  "gnto_config": {
+    "node": {
+      "kind": "mlp",
+      "out_dim": 64,
+      "dropout": 0.0,
+      "activation": "relu",
+      "in_dim": 23,
+      "hidden_dim": 64,
+      "num_layers": 2,
+      "norm": "layer",
+      "num_node_types": 32,
+      "num_cols": 64,
+      "num_ops": 8,
+      "type_dim": 16,
+      "num_numeric": 2,
+      "numeric_log1p": true,
+      "numeric_norm": "batch",
+      "numeric_dim": 8,
+      "pred_slots": 3,
+      "pred_col_dim": 16,
+      "pred_op_dim": 8,
+      "pred_dim": 32,
+      "pred_pool": "sum",
+      "embed_size": 64,
+      "vocab": {
+        "types": 20,
+        "tables": 20,
+        "joins": 10,
+        "columns": 30,
+        "ops": 10
+      },
+      "use_hist": true,
+      "use_sample": true,
+      "bin_number": 50,
+      "plan_rows": true,
+      "join_encoding": "id"
+    },
+    "graph": {
+      "conv": "gatv2",
+      "num_layers": 3,
+      "hidden_dim": 64,
+      "out_dim": 64,
+      "heads": [
+        4,
+        4,
+        1
+      ],
+      "concat_last": false,
+      "edge_mode": "as_is",
+      "self_loops": true,
+      "virtual_node": false,
+      "residual": true,
+      "norm": "layer",
+      "activation": "elu",
+      "dropout": 0.1,
+      "attn_dropout": 0.1,
+      "edge_dropout": 0.0,
+      "jk": "last"
+    },
+    "readout": {
+      "pooling": "mean",
+      "gate_hidden": 0
+    },
+    "head": {
+      "kind": "resmlp",
+      "hidden_dim": 64,
+      "num_blocks": 2,
+      "dropout": 0.1,
+      "out_dim": 1,
+      "out_activation": "sigmoid"
+    },
+    "name": "dace_zero_shot",
+    "notes": "GNTO_DACE_Model equivalent; set node.in_dim = num_node_types + 2"
+  }
+}

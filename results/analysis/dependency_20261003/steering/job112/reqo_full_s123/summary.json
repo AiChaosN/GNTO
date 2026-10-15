@@ -1,0 +1,226 @@
+{
+  "steerer": "gnto_kfold",
+  "n_queries": 112,
+  "total_runtime_ms": 129755.67287078593,
+  "pg_default_total_ms": 93518.85607180884,
+  "oracle_total_ms": 36403.97922991542,
+  "speedup_vs_pg_default": 0.7207303850594443,
+  "runtime_vs_oracle": 3.564326637241832,
+  "mean_rel_regret": 6.025053646842961,
+  "median_rel_regret": 1.3716666642194926,
+  "p90_rel_regret": 6.256781030590949,
+  "max_rel_regret": 236.34762950894788,
+  "wins_vs_pg_default": 26,
+  "losses_vs_pg_default": 64,
+  "regressions_2x": 17,
+  "oracle_hits": 20,
+  "rel_speedup_geomean": 0.8005583735166358,
+  "rel_speedup_geomean_trimmed": 0.8251023828873287,
+  "rel_speedup_mean": 1.0089869891537742,
+  "rel_speedup_p10": 0.37743222151455696,
+  "rel_speedup_p25": 0.6365365317396064,
+  "rel_speedup_p50": 0.9709458460978675,
+  "rel_speedup_p75": 1.0,
+  "rel_speedup_p90": 1.3128680073867056,
+  "rel_speedup_min": 0.02053420124252354,
+  "better_n": 19,
+  "worse_n": 54,
+  "tie_n": 39,
+  "better_pct": 16.964285714285715,
+  "worse_pct": 48.214285714285715,
+  "tie_pct": 34.82142857142857,
+  "tol": 0.05,
+  "moved_n": 90,
+  "moved_better_pct": 21.11111111111111,
+  "moved_worse_pct": 60.0,
+  "wilcoxon_p_vs_pg": 0.00010938272839926957,
+  "sign_test_p": 5.0622659111780655e-05,
+  "template_cluster_interval": {
+    "geomean": 0.8005583735166358,
+    "ci95_low": 0.6619702182269548,
+    "ci95_high": 0.9471761856807682,
+    "n_queries": 112,
+    "n_templates": 35,
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 0,
+    "resampling_unit": "template",
+    "weighting": "query",
+    "conditional_on_fitted_models": true,
+    "template_equal_weight_geomean": 0.8221997851565053,
+    "template_wilcoxon_p": 0.005968131008557975
+  },
+  "by_join_bucket": {
+    "3-4": {
+      "n": 23,
+      "total_runtime_ms": 6004.019287938718,
+      "pg_default_total_ms": 7358.3362069912255,
+      "oracle_total_ms": 3311.007368960418,
+      "speedup_vs_pg_default": 1.2255683824622534,
+      "mean_rel_regret": 15.612564623257185,
+      "rel_speedup_geomean": 0.8190536722275069,
+      "rel_speedup_p50": 1.0,
+      "better_n": 3,
+      "worse_n": 8,
+      "tie_n": 12
+    },
+    "5+": {
+      "n": 89,
+      "total_runtime_ms": 123751.65358284721,
+      "pg_default_total_ms": 86160.51986481762,
+      "oracle_total_ms": 33092.971860955004,
+      "speedup_vs_pg_default": 0.6962373218482798,
+      "mean_rel_regret": 3.5473822709156893,
+      "rel_speedup_geomean": 0.7958469843792109,
+      "rel_speedup_p50": 0.9456019471361534,
+      "better_n": 16,
+      "worse_n": 46,
+      "tie_n": 27
+    }
+  },
+  "timeout_picks": 0,
+  "timeout_pick_pct": 0.0,
+  "params": {
+    "total": 2275910,
+    "trainable": 2275910
+  },
+  "finished": "2026-10-03T14:43:52",
+  "prediction_quality": {
+    "n_plans": 1895,
+    "censored_plans_excluded_from_accuracy": 4,
+    "q50": 1.7548707032874606,
+    "q90": 6.608422088608673,
+    "q99": 43.14979213060668,
+    "q_mean": 6.60667983415956,
+    "per_query_spearman_mean": 0.6141947790480256,
+    "per_query_spearman_median": 0.7256060606060606,
+    "per_query_kendall_mean": 0.48548424122464784,
+    "global_spearman": 0.7601897771575327
+  },
+  "model": "reqo",
+  "folds": 5,
+  "seed": 123,
+  "split_seed": 42,
+  "plan_representation": "ordered-binary-v1",
+  "native_tree_adapter": null,
+  "candidate_policy": "complete",
+  "deduplicate": true,
+  "epochs": 100,
+  "native_timeout_target": "budget-capped",
+  "rank_weight": 0.0,
+  "rank_space": "log",
+  "drop_features": "",
+  "features": "dace",
+  "group": "template",
+  "extra_train": "",
+  "preset": "dace_zero_shot",
+  "overrides": [],
+  "fold_info": [
+    {
+      "fold": 0,
+      "n_train": 1508,
+      "n_test": 391,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 762.5195560455322,
+      "epochs": 100,
+      "selected_epoch": 99,
+      "final_loss": -1.4808125325159938
+    },
+    {
+      "fold": 1,
+      "n_train": 1537,
+      "n_test": 362,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 830.8680245876312,
+      "epochs": 100,
+      "selected_epoch": 99,
+      "final_loss": -1.4072193205356598
+    },
+    {
+      "fold": 2,
+      "n_train": 1554,
+      "n_test": 345,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 605.810540676117,
+      "epochs": 100,
+      "selected_epoch": 99,
+      "final_loss": -1.3230176831150915
+    },
+    {
+      "fold": 3,
+      "n_train": 1509,
+      "n_test": 390,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 441.0638506412506,
+      "epochs": 100,
+      "selected_epoch": 99,
+      "final_loss": -1.4029270276239647
+    },
+    {
+      "fold": 4,
+      "n_train": 1488,
+      "n_test": 411,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 392.08478808403015,
+      "epochs": 100,
+      "selected_epoch": 99,
+      "final_loss": -1.381297037165652
+    }
+  ],
+  "reqo_inputs": "full",
+  "reqo_config": {
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "encoder_attention_heads": 1,
+    "encoder_conv_layers": 3,
+    "encoder_gnn_embedding_dim": 256,
+    "encoder_gnn_dropout_rate": 0.1,
+    "encoder_dirgnn_alpha": 0.3,
+    "encoder_node_type_embedding_dim": 16,
+    "encoder_column_embedding_dim": 8,
+    "estimator_fcn_layers": 4,
+    "estimator_estimation_embedding_dim": 512,
+    "estimator_fcn_dropout_rate": 0.1,
+    "pairrankingloss_margin": 3
+  },
+  "selection_score": "integrated score IC",
+  "reqo_epoch_selection": "last",
+  "reqo_epochs": [
+    {
+      "selected_epoch": 99,
+      "epochs_run": 100
+    },
+    {
+      "selected_epoch": 99,
+      "epochs_run": 100
+    },
+    {
+      "selected_epoch": 99,
+      "epochs_run": 100
+    },
+    {
+      "selected_epoch": 99,
+      "epochs_run": 100
+    },
+    {
+      "selected_epoch": 99,
+      "epochs_run": 100
+    }
+  ],
+  "reqo_source": "https://github.com/BaomingChang/Reqo-on-PostgreSQL",
+  "reqo_text_encoding": {
+    "failed_nodes": 0,
+    "nodes": 256425,
+    "column_kinds": {
+      "numeric": 55,
+      "date": 0,
+      "text": 46,
+      "other": 7
+    },
+    "catalog": "data/e2e/hint_plans_v2_job112/pg_catalog_snapshot.json"
+  }
+}

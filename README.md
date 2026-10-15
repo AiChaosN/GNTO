@@ -1,180 +1,248 @@
-# GNTO - Graph Neural Tree Optimizer
+# GNTO
 
-GNTO is a deep learning-based framework for database query optimization and cost prediction. It focuses on node-level encoding and structure-level modeling of query plans, leveraging Graph Neural Networks (GNNs) to capture complex structural features of query plans for accurate execution time or cost prediction.
+Code and experiment results for GNTO, a graph neural network cost model for PostgreSQL query plans, and for the
+baselines it is run against (QueryFormer, DACE, Bao, LIMAO, Reqo / BiGG, zero-shot cost estimation).
 
-## Key Highlights
+## Repository layout
 
-*   **SOTA Hybrid Encoding Architecture**: Combines data-distribution-based statistical features (QueryFormer-style Histograms) and optimizer prior knowledge (Optimizer Cost Estimates), achieving better performance than purely data-driven methods.
-*   **DeepSets Theory Alignment**: The node encoder (V4) strictly follows DeepSets theory, using Sum Pooling to aggregate predicate features and preserving the complete information quantity (Total Filtering Mass).
-*   **Dynamic Graph Attention Mechanism**: Introduces GATv2 and Global Attention Pooling, addressing the static attention bottleneck of traditional GAT, and dynamically capturing the influence of critical paths and operators in query plans.
-*   **Modular Evolution**: Features a complete model evolution history (V1 → V4 → QF+), supporting flexible switching between different encoder combinations for ablation experiments.
+| Path | Contents |
+|---|---|
+| `models/gnto/` | GNTO: node encoder, graph encoder (GATv2 / GAT / GCN / tree convolution / none), readout, head; presets and `--set` overrides in `config.py` |
+| `models/qf/` | QueryFormer, ported from the released code |
+| `models/dace/` | DACE, ported from the released code, and its node featuriser |
+| `adapters/` | plan featurisation shared by the runners (QueryFormer features, PostgreSQL-statistics features, plan representation) and the Bao loader |
+| `exp/exp1_qerror/` | Exp1: Q-error on the QueryFormer IMDb plan corpus |
+| `exp/exp2_dace/` | Exp2: cross-database estimation on DACE's 20-database workload |
+| `exp/exp3_e2e/` | Exp3: plan selection over 49 hint sets on JOB and TPC-H (hint-plan collection, steerers, k-fold training) |
+| `exp/exp4_ablation/` | Exp4: architecture ablations, trained with the Exp1 runner |
+| `analysis/` | further studies: `dependency_study/`, `attn/`, `baselines/` (Reqo, BiGG, zero-shot), `online/` (online plan selection), `tlr/` |
+| `scripts/` | config-driven GNTO training and evaluation on the QueryFormer corpus |
+| `tests/` | unit tests of the experiment protocol |
+| `data/` | small inputs; large inputs are obtained as described under [Data](#data) |
+| `results/` | experiment outputs, see [Results](#results) |
 
-## Quick Start
+All commands below are run from the repository root.
 
-### 1. Environment Setup
+## Environment
 
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Train the Model
-
-To reproduce the best results from the paper, run the SOTA training script:
-
-```bash
-python examples/1216_compGntoWithQF_addPlanrows.py
-```
-
-This script will automatically:
-1. Load the QueryFormer-format dataset (including histograms and table samples).
-2. Inject `Plan Rows` features.
-3. Train the GNTO (QF+ / GATv2) model.
-4. Output validation set Q-Error metrics (Median, 90th, 95th, etc.).
-
-**Note**: The training script depends on the [QueryFormer_VLDB2022](https://github.com/...) project for data loading. Ensure it is cloned as a sibling directory or adjust the path in the script.
-
-### 3. Run Ablation Experiments
+Python 3.13 (results produced with 3.13.11). Install the PyTorch build for your platform first, then
 
 ```bash
-python examples/0204_run_ablation_gnto.py
+pip install -r requirements-lock.txt   # exact versions used for the results
+# or
+pip install -r requirements.txt        # minimum versions
 ```
 
-### 4. Further Documentation
+The Exp1 / Exp2 / Exp4 runners use a GPU when one is available (`--device cuda|cpu`); the plan-selection runners
+and the studies under `analysis/` run on CPU. PostgreSQL is only needed to collect hint plans.
 
-*   **Model evolution details**: See `docs/Model_Evolution.md`.
-*   **Experiment-to-script mapping**: See `docs/Experiment_Results_Source.md`.
+### External code
 
----
+Clone next to this repository (sibling directories):
 
-## Project Structure
+| Directory | Repository | Used by |
+|---|---|---|
+| `../BaoForPostgreSQL` | https://github.com/learnedsystems/BaoForPostgreSQL | Bao (`adapters/bao_adapter.py`) |
+| `../LIMAOLifeLongRLDB` | https://github.com/Tsihan/LIMAOLifeLongRLDB, branch `LIMAO_Bao` | LIMAO (`exp/exp3_e2e/limao_worker.py`) |
+| `../baselines_src/Reqo-on-PostgreSQL` | https://github.com/BaomingChang/Reqo-on-PostgreSQL | Reqo / BiGG (`analysis/baselines/`) |
+| `../baselines_src/zero-shot-cost-estimation` | https://github.com/DataManagementLab/zero-shot-cost-estimation | zero-shot model (`analysis/baselines/run_zeroshot.py`) |
 
-```
-GNTO/
-├── config/                  # Training configuration management
-├── data/                    # Dataset files
-├── docs/                    # Project documentation
-│   ├── Model_Evolution.md          # Detailed model module evolution history
-│   └── Experiment_Results_Source.md # Experiment results and script mapping
-├── examples/                # Example code and experiment scripts (all use centralized adapters)
-│   ├── 1216_compGntoWithQF_addPlanrows.py # [Core] SOTA training (QF+ & GATv2, via qf_adapter)
-│   ├── 1216_compGntoWithQF.py             # Comparison without PlanRows (via qf_adapter)
-│   ├── 1203_train_qf_standard.py          # Baseline: QF reproduction (via qf_adapter)
-│   ├── 0120_test_dace_workload1.py        # DACE cross-DB test, sequential split (via dace_adapter)
-│   ├── 0121_test_dace_workload1.py        # DACE cross-DB test, random split (via dace_adapter)
-│   ├── 0204_run_ablation_gnto.py          # Ablation experiment automation
-│   └── ...
-├── models/                  # Core model implementations (single source of truth)
-│   ├── NodeEncoder.py       # Node encoder (V4, QF, QF_AddPlanrows)
-│   ├── TreeEncoder.py       # Tree encoder (GATv2, GlobalAttention)
-│   ├── PredictionHead.py    # Prediction head (ResNet-style V2)
-│   └── ...
-├── adapters/                # Baseline integration adapters
-│   ├── qf_adapter.py       # QueryFormer benchmark adapter (static regression)
-│   ├── limao_adapter.py    # LIMAO/Bao end-to-end adapter
-│   └── dace_adapter.py     # DACE cross-database benchmark adapter
-├── archive/                 # Archived code
-├── requirements.txt         # Project dependencies
-└── README.md                # Project overview
+LIMAO loads `kproto_processor.pkl` from an absolute path; point it to the file at the root of the checkout:
+
+```bash
+sed -i 's#load_from_disk("[^"]*kproto_processor.pkl")#load_from_disk(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "kproto_processor.pkl"))#' \
+    ../LIMAOLifeLongRLDB/bao_server/model.py
 ```
 
-## Core Architecture (Current SOTA)
+The zero-shot model runs in its own environment (Python 3.8 and its `requirements.txt`, as in its README); set
+`ZS_PYTHON` to that interpreter. It trains on the parsed plans of its data repository
+(https://osf.io/ga2xj/?view_only=60916f2446e844edb32e3b4d676cb6ee, `runs/parsed_plans.zip`), unzipped to
+`../baselines_src/zero-shot-data/parsed_plans/` and linked per database:
 
-The best-performing model configuration (implemented in `examples/1216_compGntoWithQF_addPlanrows.py`):
-
-1.  **Node Encoder: `NodeEncoder_QF_AddPlanrows` (Hybrid)**
-    *   **Base**: Inherits from QueryFormer, using 150-dim histograms and 1000-dim table samples to capture data distribution.
-    *   **Enhancement**: Explicitly injects optimizer-estimated `Plan Rows` as an additional feature channel.
-    *   **Advantage**: Combines data-driven fine-grained statistics with the optimizer's global cost estimation capability.
-
-2.  **Tree Encoder: `GATv2TreeEncoder_V3`**
-    *   **Mechanism**: Uses **GATv2** (Dynamic Graph Attention) instead of standard GAT.
-    *   **Structure**: 3-layer GATv2 + LayerNorm + Residual Connections.
-    *   **Aggregation**: Supports Global Attention Pooling (GAP), automatically learning node weights for graph-level aggregation.
-
-3.  **Prediction Head: `PredictionHead_V2`**
-    *   **Structure**: ResNet-style deep prediction network.
-    *   **Features**: Residual connections and LayerNorm for stronger nonlinear fitting and training stability compared to simple MLPs.
-
-## Baseline Integration Architecture
-
-GNTO uses an **adapter pattern** to integrate with different baselines. All GNTO model code lives exclusively in `models/`, and each baseline is connected through a thin adapter in `adapters/`.
-
-| Baseline | Task Paradigm | Data | Adapter | Integration Pattern |
-|----------|---|---|---------|-------------------|
-| **QueryFormer** | offline plan prediction | QF's IMDB 100k / JOB-light (70) / synthetic (500) | `qf_adapter.py` | GNTO imports QF's FeatureEmbed (1165-dim) and PlanTreeDataset; converts to PyG; replaces QF's transformer tree-encoder with GATv2 |
-| **DACE** | offline cross-database | workload1 (10+ DBs; half train / half test) | `dace_adapter.py` | GNTO loads DACE workload JSON; `GNTO_DACE_Model` swaps NodeEncoder to match DACE features (node-type one-hot + scaled cost/rows), reuses GATv2 + head |
-| **LIMAO** | online end-to-end steering | live PG + bao_server framework | `limao_adapter.py` | LIMAO's `bao_server` imports GNTO components; predictions logged to `gnto_predictions.csv`. Workflow: `LIMAOLifeLongRLDB/gnto_ex/workflow.sh`. |
-
-**Key design principle**: GNTO's `models/` is the **single source of truth**. Baseline forks (QueryFormer, LIMAO, DACE) should NOT contain copies of GNTO model code. Instead, they import from this repository via adapters.
-
-Each adapter provides:
-- **Data conversion**: Transform baseline-specific data format → PyG `Data` objects
-- **Model assembly**: Combine appropriate NodeEncoder + TreeEncoder + PredictionHead for the baseline's benchmark
-- **Evaluation utilities**: Baseline-compatible metrics (Q-Error, etc.)
-
-## Experiment Scripts
-
-All experiment scripts are in `examples/`. Clone the baseline repositories first:
-
-```shell
-git clone https://github.com/AiChaosN/DACE.git
-git clone https://github.com/AiChaosN/QueryFormer_VLDB2022.git
-git clone https://github.com/AiChaosN/LIMAOLifeLongRLDB.git
+```bash
+mkdir -p ../baselines_src/zs_runs/plans
+for db in $(python -c "from models.dace import WORKLOADS; print(*WORKLOADS)"); do
+  src=$db; [ "$db" = imdb_full ] && src=imdb
+  ln -s "../../zero-shot-data/parsed_plans/$src/workload_100k_s1_c8220.json" "../baselines_src/zs_runs/plans/$db.json"
+done
 ```
 
-### Training experiments
+## Data
 
-| Script | Description | Baseline | Note |
-|--------|-------------|----------|------|
-| `1216_compGntoWithQF_addPlanrows.py` | **SOTA** GNTO (QF + PlanRows + GATv2) | QueryFormer | Best config |
-| `1216_compGntoWithQF.py` | GNTO without PlanRows | QueryFormer | Ablation: PlanRows effect |
-| `0519_eval_real_qf.py` | Re-evaluate real QueryFormer (4.48M-param transformer) ckpt from `QueryFormer_VLDB2022/results/full/cost/` | QueryFormer | Pulls in the actual baseline; no re-training |
-| `0519_eval_qf_jobsynth.py` | GNTO + real QF on JOB-light / synthetic datasets | QueryFormer | Adds the missing 2/3 datasets |
-| `0120_test_dace_workload1.py` | DACE cross-DB, sequential split (DB 0-9 train / 10-19 test), hidden=128, epochs=15 | DACE | |
-| `0121_test_dace_workload1.py` | DACE cross-DB, random split, hidden=64, epochs=10 | DACE | |
-| `0204_run_ablation_gnto.py` | Full ablation (Hist/Sample/GNN/Head combinations, 6 configs) | Self | Outputs to `results/Ablation_GNTO_*` |
+### Included
 
-### Visualization / plotting (run after training)
+| File | Contents |
+|---|---|
+| `data/e2e/queries_job112.csv` | 112 IMDb queries (JOB and two CEB queries) with template ids |
+| `data/e2e/queries_tpch52.csv` | 52 TPC-H queries (13 templates); `queries_tpch52.sources.json` holds the hashes of the source SQL files |
+| `data/e2e/pg_catalog_snapshot.json` | pg_class / pg_stats / settings snapshot of the IMDb database (default `--catalog` of `exp/exp3_e2e/run_kfold.py`) |
+| `data/qf/template_split.json` | template-disjoint 80 / 10 / 10 split of the QueryFormer corpus (`--split template`) |
 
-| Script | Description | Depends on |
-|--------|-------------|------------|
-| `0202_compare_logs_QFvsGNTO.py` | QF vs GNTO training curve comparison | `1216_compGntoWithQF_addPlanrows.py` results |
-| `0202_compare_logs_GNTO_GAT1vsGAT2.py` | GAT vs GATv2 comparison | `1216_*` and `1203_*` results |
-| `0204_plot_ablation_gnto.py` | Ablation results visualization | `0204_run_ablation_gnto.py` results |
+### QueryFormer plan corpus
 
-### LIMAO end-to-end
+Exp1, Exp4, `scripts/`, and the Bao / GNTO models of Exp3 that are trained on the corpus use the data released with
+QueryFormer (https://github.com/zhaoyue-ntu/QueryFormer):
 
-LIMAO experiments run inside `LIMAOLifeLongRLDB/`, not in GNTO. The Bao server loads GNTO via `adapters/limao_adapter.py`. See the [LIMAOLifeLongRLDB README](https://github.com/AiChaosN/LIMAOLifeLongRLDB) for instructions.
-
-### Reproduce all experiments
-
-```shell
-# 1. GNTO vs QueryFormer (plan-level cost prediction)
-python examples/1216_compGntoWithQF_addPlanrows.py   # train GNTO SOTA on QF 100k IMDB
-python examples/0519_eval_real_qf.py                 # eval the real (transformer) QF ckpt on the same val split
-python examples/0519_eval_qf_jobsynth.py             # GNTO + real QF on JOB-light + synthetic
-python examples/0202_compare_logs_QFvsGNTO.py        # training-curve plot
-
-# 2. GNTO vs DACE (cross-database generalization)
-python examples/0120_test_dace_workload1.py          # sequential split
-python examples/0121_test_dace_workload1.py          # random split
-
-# 3. GNTO vs LIMAO (end-to-end via Bao server)
-# See LIMAOLifeLongRLDB README
-
-# 4. GAT vs GATv2 ablation
-python examples/1216_compGntoWithQF_addPlanrows.py
-python examples/1216_compGntoWithQF.py
-python examples/1203_train_qf_standard.py
-python examples/0202_compare_logs_GNTO_GAT1vsGAT2.py  # plot comparison
-
-# 5. Full ablation study (6 configs x 50 epochs)
-python examples/0204_run_ablation_gnto.py
-python examples/0204_plot_ablation_gnto.py             # plot results
+```bash
+git clone https://github.com/zhaoyue-ntu/QueryFormer ../QueryFormer
+cp ../QueryFormer/data/imdb/plan_and_cost/train_plan_part*.csv data/
+cp ../QueryFormer/data/imdb/{job-light_plan,synthetic_plan,column_min_max_vals}.csv data/
+mkdir -p data/qf
+cp -r ../QueryFormer/data/imdb/{histogram_string.csv,train.csv,train.bitmaps,workloads} data/qf/
+cp ../QueryFormer/checkpoints/{encoding.pt,cost_model.pt} data/qf/
 ```
 
-## Experimental Findings Summary
+### DACE workload
 
-*   **GNTO vs QueryFormer**: With `Plan Rows` and GATv2, GNTO significantly outperforms original QueryFormer on Q-Error (95th/99th) for complex queries.
-*   **GAT vs GATv2**: The dynamic attention mechanism (GATv2) performs better when handling long-range path dependencies.
-*   **Hybrid Encoding**: Hybrid encoding (QF+PlanRows) demonstrates that optimizer estimates, though imperfect, contain important high-level logical information that effectively assists the neural network.
+Exp2 and the cross-database runs read `data/dace/workload1/` (`<database>_filted.json` for 20 databases and
+`statistics.json`). The files are built from the parsed plans of the zero-shot cost estimation benchmark
+(https://osf.io/rb5tn/, `runs.zip` -> `runs/parsed_plans/<database>/workload_100k_s1_c8220.json`; `imdb_full` is
+taken from `imdb`) in the format DACE (https://github.com/liang-zibo/DACE) reads: every plan node becomes a
+PostgreSQL EXPLAIN node (`op_name` -> `Node Type`, `est_cost` -> `Total Cost`, `est_card` -> `Plan Rows`,
+`act_time` -> `Actual Total Time`, `children` -> `Plans`), each plan is wrapped as `[[[{"Plan": ...}]]]`, plans
+with a missing field or more than 50 nodes are dropped, and DACE's `setup.filter_plans()` and
+`setup.get_statistic()` write the `_filted.json` files and `statistics.json`.
+
+### Hint plans
+
+The plan-selection experiments read one JSON file per query with the plans and measured latencies of the 49 Bao
+hint sets. The packs are collected with `exp/exp3_e2e/collect_benchmark.py` (read-only statements, libpq environment
+variables for the connection):
+
+```bash
+PGDATABASE=imdbload python exp/exp3_e2e/collect_benchmark.py --queries data/e2e/queries_job112.csv --out data/e2e/hint_plans_v2_job112
+PGDATABASE=tpch_sf1 python exp/exp3_e2e/collect_benchmark.py --queries data/e2e/queries_tpch52.csv --out data/e2e/hint_plans_v2_tpch52
+```
+
+The packs behind the results were collected on PostgreSQL 16.9 (the IMDb database of the Join Order Benchmark,
+https://github.com/gregrahn/join-order-benchmark, and TPC-H at scale factor 1) with the default protocol: statement
+timeout 32 s, one warm-up and three timed executions per plan in randomized order, seed 42. Each pack also holds
+`collection_manifest.json` and the `pg_catalog_snapshot.json` of the database it was collected on.
+
+The runs in `results/exp3_e2e/` use an earlier pack, `data/e2e/hint_plans_job112/`, with one execution per hint set
+of the same 112 queries on PostgreSQL 16 (per query: `query_id`, `sql`, `results` = list of `hint_id`,
+`total_cost`, `actual_exec_time_ms`, `wall_clock_ms`, `plan`). It was not produced by `collect_benchmark.py`.
+
+Feature caches are written to `data/process/cache/` on first use.
+
+## Running the experiments
+
+Every run directory under `results/` has a `config.json` with the complete arguments of the runner that wrote it,
+so any single run can be repeated from it. The shell scripts are idempotent: runs whose `summary.json` exists are
+skipped, `DRY=1` lists the missing runs, and `JOBS=<n>` (where supported) sets the number of parallel runs.
+
+### Exp1: Q-error on the QueryFormer corpus
+
+```bash
+python exp/exp1_qerror/run_qf.py                                         # -> results/exp1_qerror/qf
+python exp/exp1_qerror/run_gnto.py                                       # -> results/exp1_qerror/gnto
+python exp/exp1_qerror/run_gnto.py --seed 7 --out results/exp1_qerror/gnto_s7   # same for qf and seed 123
+bash exp/exp1_qerror/run_template_split.sh                               # template-disjoint split -> *_tmpl*
+python exp/exp1_qerror/analyze.py                                        # -> results/exp1_qerror/tables/
+python exp/exp1_qerror/plot.py                                           # -> results/exp1_qerror/figures/
+python exp/exp1_qerror/bench_latency.py                                  # inference latency of the trained models
+```
+
+### Exp2: cross-database estimation
+
+```bash
+bash exp/exp2_dace/run_matrix.sh          # DACE and GNTO, splits paper / rand1 / rand2 x seeds 42 / 7 / 123
+bash exp/exp2_dace/run_e100.sh            # 100 epochs, final-epoch model; SPLIT=rand1|rand2 for the other splits
+python exp/exp2_dace/analyze.py
+python exp/exp2_dace/analyze_e100.py
+python exp/exp2_dace/plot.py
+```
+
+`paper` is a fixed 10 / 10 split of the 20 databases (listed in `models/dace/resources.py`); `rand1` / `rand2` are
+seeded random 10 / 10 splits.
+
+### Exp3: plan selection
+
+```bash
+python exp/exp3_e2e/run_baselines.py      # PostgreSQL default plan, PostgreSQL cost, oracle
+python exp/exp3_e2e/run_bao.py            # Bao trained on the QueryFormer corpus
+python exp/exp3_e2e/run_gnto.py           # GNTO trained in Exp1 (results/exp1_qerror/gnto/best_model.pt)
+python exp/exp3_e2e/run_kfold.py --help   # models trained on the hint plans, k folds by query or template
+python exp/exp3_e2e/analyze.py            # -> results/exp3_e2e/tables/
+python exp/exp3_e2e/plot.py
+```
+
+### Main plan-selection, cross-database and capacity runs (`results/main_runs/`)
+
+`job112/` and `tpch52/` are `exp/exp3_e2e/run_kfold.py` on the v2 hint plans, five template folds, seeds 42 / 7 /
+123. Directory names are `<features>_<encoder>_rank<0|1>_s<seed>` (GNTO with DACE or PostgreSQL-statistics inputs),
+`bao_extended_capped_s<seed>`, `limao_extended_capped_s<seed>`; `references/` holds the PostgreSQL and oracle
+choices. Example:
+
+```bash
+python exp/exp3_e2e/run_kfold.py --model gnto --hint-plans data/e2e/hint_plans_v2_job112 \
+    --features pg --catalog data/e2e/hint_plans_v2_job112/pg_catalog_snapshot.json \
+    --set graph.conv=gatv2 --set graph.heads=1 --grouped-batches --rank-weight 1 \
+    --group template --folds 5 --split-seed 42 --seed 42 --epochs 100 \
+    --plan-representation ordered-binary-v1 --device cpu --threads 2 \
+    --out results/main_runs/job112/pg_gatv2_rank1_s42
+```
+
+`crossdb/` are the Exp2 runners with `--epochs 100 --select last --statistics train` on the three database splits
+and three seeds, e.g.
+
+```bash
+python exp/exp2_dace/run_gnto.py --split paper --split-seed 1 --statistics train --epochs 100 --select last \
+    --seed 42 --device cpu --threads 4 --out results/main_runs/crossdb/gnto_paper1_s42_trainstats
+python exp/exp2_dace/run_dace.py --split rand --split-seed 1 --statistics train --epochs 100 --select last \
+    --seed 42 --device cpu --threads 4 --out results/main_runs/crossdb/dace_rand1_s42_trainstats
+```
+
+`capacity/` is QueryFormer at reduced width on the template split:
+
+```bash
+python exp/exp1_qerror/run_qf.py --emb-size 24 --layers 3 --heads 4 --ffn-dim 64 --pred-hid 64 --split template \
+    --seed 42 --device cpu --threads 4 --out results/main_runs/capacity/qf_small_s42
+```
+
+`results/main_runs_stats/` holds per-seed and paired tables computed from these runs.
+
+### Exp4: architecture ablations
+
+```bash
+bash exp/exp4_ablation/run_ablations.sh             # all groups; or name groups, e.g. `depth res`
+python exp/exp4_ablation/analyze.py
+python exp/exp4_ablation/plot.py
+```
+
+`results/exp4_ablation/{gnto,gnto_s7,gnto_s123,qf,qf_s7,qf_s123}` are links to the Exp1 runs.
+
+### Studies under `analysis/`
+
+| Command | Output |
+|---|---|
+| `bash analysis/dependency_study/run_all.sh` | `results/analysis/dependency_20261003/` |
+| `bash analysis/attn/run_all.sh` | `results/analysis/attn_20261008/` |
+| `bash analysis/baselines/run_all.sh`, `run_subset_all.sh`, `zeroshot_more.sh` | `results/analysis/dependency_20261003/`, `results/analysis/zs_subset_20261008/` |
+| `bash analysis/online/run_all.sh`, `run_all_tpch.sh`, `run_async_and_none.sh` | `results/analysis/online_20261005/` |
+| `bash analysis/tlr/run_all.sh`, `run_selection.sh`, `run_tlr_base.sh` | `results/analysis/tlr_20261008/` |
+
+The header of each script lists its run groups. The Python scripts next to them (`analyze_*.py`, `report.py`, ...)
+build the tables from the run directories.
+
+## Results
+
+```
+results/<experiment>/<run>/
+    config.json          runner arguments and model configuration
+    summary.json         metrics of the run
+    training_log*.csv    per-epoch training / validation metrics
+    predictions*.csv     per-plan predictions (where small)
+    picks.csv            chosen hint set per query (plan selection)
+    folds.json           query / template folds (plan selection)
+results/<experiment>/tables/, figures/   aggregated tables and plots
+```
+
+Not included: model weights, raw logs, and the per-plan prediction files of the larger runs; rerun the
+corresponding command to recreate them.
+
+## Tests
+
+```bash
+python -m pytest tests
+```

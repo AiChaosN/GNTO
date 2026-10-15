@@ -1,0 +1,41 @@
+{
+  "experiment": "exp3_e2e",
+  "out_dir": "results/exp3_e2e/gnto_kfold_tpl_gcn",
+  "args": {
+    "model": "gnto",
+    "fold_jobs": 5,
+    "fold_threads": 2,
+    "limao_assign": "per_plan",
+    "reuse_folds": false,
+    "folds": 5,
+    "group": "template",
+    "seed": 42,
+    "epochs": 100,
+    "bs": 128,
+    "lr": 0.001,
+    "preset": "dace_zero_shot",
+    "set": [
+      "graph.conv=gcn"
+    ],
+    "rank_weight": 0.0,
+    "rank_min_gap": 0.1,
+    "rank_space": "log",
+    "queries_per_batch": 3,
+    "max_runtime": 32000.0,
+    "features": "dace",
+    "catalog": "data/e2e/pg_catalog_snapshot.json",
+    "drop_features": "",
+    "extra_train": "",
+    "limit_queries": null,
+    "train_all": false,
+    "device": "cuda",
+    "hint_plans": "data/e2e/hint_plans_job112",
+    "out": null,
+    "tag": "tpl_gcn"
+  },
+  "started": "2026-09-28T06:37:13",
+  "steerer": "gnto_kfold",
+  "n_queries": 112,
+  "n_plans": 5397,
+  "n_extra_plans": 0
+}

@@ -1,0 +1,43 @@
+{
+  "experiment": "exp1_qerror",
+  "out_dir": "results/exp1_qerror/qf_tmpl",
+  "args": {
+    "split": "template",
+    "train_parts": "0-17",
+    "val_parts": "18-19",
+    "workloads": "val,job-light,synthetic",
+    "limit": null,
+    "exclude_joins": "",
+    "num_workers": 16,
+    "no_cache": false,
+    "epochs": 100,
+    "bs": 128,
+    "lr": 0.001,
+    "step_size": 20,
+    "gamma": 0.7,
+    "clip": 50.0,
+    "eval_every": 10,
+    "select": "q90",
+    "seed": 42,
+    "ckpt": null,
+    "device": "cuda",
+    "out": "results/exp1_qerror/qf_tmpl",
+    "tag": "",
+    "smoke": false,
+    "use_cache": true
+  },
+  "torch": "2.10.0+cu128",
+  "started": "2026-09-28T04:06:53",
+  "model": "QueryFormer",
+  "hparams": {
+    "emb_size": 64,
+    "ffn_dim": 128,
+    "head_size": 12,
+    "n_layers": 8,
+    "dropout": 0.1,
+    "pred_hid": 128,
+    "use_sample": true,
+    "use_hist": true,
+    "bin_number": 50
+  }
+}

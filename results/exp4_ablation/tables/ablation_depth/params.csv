@@ -1,0 +1,4 @@
+model,dir,total_params,trainable_params
+GAT L3 (default),gnto,302613,302613
+GAT L5,gnto_L5,724693,724693
+GAT L7,gnto_L7,989909,989909

@@ -1,0 +1,7 @@
+model,dir,total_params,trainable_params
+GAT parent->child,gnto,302613,302613
+GAT bidirectional,gnto_bidir,302613,302613
+GAT child->parent,gnto_reverse,302613,302613
+GCN parent->child,gnto_gcn,140309,140309
+GCN bidirectional,gnto_gcn_bidir,140309,140309
+TCNN bottom-up,gnto_tcnn,164885,164885

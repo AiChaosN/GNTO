@@ -1,0 +1,71 @@
+query_id,pred_ms,actual_ms,qerror,n_nodes,n_joins,joins,holdout_join
+0,0.3138582885226083,7.659,24.402732698071326,6,2,mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+1,0.15285457242840958,0.196,1.2822645195373426,5,2,mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+2,0.3903311276945241,0.972,2.490193412454968,6,2,mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+3,0.12436650590011777,0.172,1.3830090714246905,5,2,mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+4,421.64726323319996,281.168,1.4996274979071584,7,2,mc.movie_id = t.id|mk.movie_id = t.id,False
+5,19281.441014499047,23358.129,1.2114306647872122,7,2,mi.movie_id = t.id|mk.movie_id = t.id,False
+6,6173.705153603522,5591.987,1.1040271295866753,8,2,mi.movie_id = t.id|mk.movie_id = t.id,False
+7,41256.73044041652,44047.047,1.067632999629316,6,2,mi.movie_id = t.id,False
+8,1238.2476756844972,1169.866,1.0584526012623934,8,2,mk.movie_id = t.id|mi_idx.movie_id = t.id,False
+9,816.1866183625403,608.731,1.3408001139076222,8,2,mk.movie_id = t.id|mi_idx.movie_id = t.id,False
+10,1817.6026871354882,1575.908,1.1533685560588691,8,2,mk.movie_id = t.id|mi_idx.movie_id = t.id,False
+11,4241.661365829849,4652.52,1.0968626720207353,8,2,mi.movie_id = t.id|mc.movie_id = t.id,False
+12,2572.1519272508476,2335.406,1.1013724897501733,7,2,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id,False
+13,12648.799727603546,12700.719,1.0041046600084236,7,2,mi.movie_id = t.id|mc.movie_id = t.id,False
+14,15.62378346128599,7.276,2.1473039323994096,6,2,ci.movie_id = t.id|mk.movie_id = t.id,False
+15,180.57012619422562,157.499,1.1464843225126775,6,2,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mk.movie_id = t.id,False
+16,15.332603471274675,0.132,116.15608753299988,6,2,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mk.movie_id = t.id,False
+17,17.111987594608745,0.941,18.184896782240436,6,2,ci.movie_id = t.id|mk.movie_id = t.id,False
+18,45291.17146578811,42980.99,1.0537489545242937,7,2,ci.movie_id = t.id|mk.movie_id = t.id,False
+19,9945.162846848943,10254.277,1.0310818939479707,4,1,ci.movie_id = t.id,False
+20,3220.4012939584263,2854.966,1.1279998505254742,5,1,ci.movie_id = t.id,False
+21,20438.07718530491,21102.03,1.0324860360174917,4,1,ci.movie_id = t.id,False
+22,11759.850856860847,11154.053,1.0543119292074776,7,2,ci.movie_id = t.id|mc.movie_id = t.id,False
+23,3050.5600043541085,3861.08,1.2656955026664036,8,2,ci.movie_id = t.id|mc.movie_id = t.id,False
+24,1349.3967056850986,1592.118,1.1798739653687367,8,2,mc.movie_id = t.id|ci.movie_id = t.id,False
+25,6374.171229222379,7493.217,1.175559382923753,7,2,ci.movie_id = t.id|mc.movie_id = t.id,False
+26,6244.48307889474,11360.962,1.8193598686271668,7,2,ci.movie_id = t.id|ci.movie_id = mc.movie_id|mc.movie_id = t.id,False
+27,9010.685025380099,10531.864,1.1688194879909515,7,2,ci.movie_id = t.id|mc.movie_id = t.id,False
+28,15496.250297797176,15339.124,1.0102434972244565,7,2,ci.movie_id = t.id|ci.movie_id = mc.movie_id|mc.movie_id = t.id,False
+29,32558.416709455207,32381.514,1.0054630873458474,7,2,ci.movie_id = t.id|mc.movie_id = t.id,False
+30,71.51353714379806,104.992,1.4681415709311205,7,2,mc.movie_id = t.id|mk.movie_id = t.id,False
+31,68.99971604741206,109.315,1.5842819174254597,7,2,mc.movie_id = t.id|mk.movie_id = t.id,False
+32,11237.331371444996,11695.462,1.0407686244602212,5,2,,False
+33,1093.6919138234764,1238.877,1.1327476572392001,9,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mc.movie_id = mi_idx.movie_id|mi_idx.movie_id = t.id,False
+34,0.3123000078157745,2.979,9.538904953566457,7,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+35,2898.822487727037,3818.46,1.3172451838993253,9,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+36,4042.6804953522483,5470.997,1.3533092898640755,10,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+37,1301.4770067292352,659.957,1.9720634305984368,10,3,mk.movie_id = t.id|mi.movie_id = mk.movie_id|mi.movie_id = t.id|mi.movie_id = mi_idx.movie_id|mi_idx.movie_id = t.id,False
+38,7208.202614466761,5516.716,1.3066111884767058,10,3,mk.movie_id = t.id|mi.movie_id = t.id|mi_idx.movie_id = t.id,False
+39,5977.832227745637,3684.173,1.622570946711929,9,3,mk.movie_id = t.id|mi.movie_id = t.id|mi_idx.movie_id = t.id,False
+40,12731.593492619148,131333.5,10.31555869861362,11,3,mk.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = t.id,False
+41,5287.1090005709375,53601.688,10.138184685470213,11,3,mk.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = t.id,False
+42,15626.168852749386,158609.31,10.150236695547616,11,3,mk.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = t.id,False
+43,5795.77204039993,8049.851,1.3889178211473066,9,3,ci.movie_id = t.id|mc.movie_id = t.id|mk.movie_id = t.id,False
+44,5632.668476800983,10713.384,1.9020085831763809,10,3,ci.movie_id = t.id|mi.movie_id = t.id|mi_idx.movie_id = t.id|mi.movie_id = mi_idx.movie_id,False
+45,11793.864616350638,7766.931,1.5184716312042654,9,3,ci.movie_id = t.id|ci.movie_id = mi.movie_id|mi.movie_id = t.id|mi_idx.movie_id = t.id,False
+46,31851.302929079713,52604.152,1.6515541753779648,10,3,ci.movie_id = t.id|mi.movie_id = t.id|mi_idx.movie_id = t.id,False
+47,11960.924321368073,13348.951,1.116046788125499,10,3,ci.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id,False
+48,18788.751001242465,62600.51,3.3318080437922855,11,3,ci.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = t.id,False
+49,13335.306352258916,36353.55,2.726112908166668,11,3,ci.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = t.id,False
+50,39398.26327413577,51119.863,1.297515652544239,8,2,ci.movie_id = t.id|mk.movie_id = t.id,False
+51,36746.888551693024,51916.914,1.4128247617336858,8,2,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mk.movie_id = t.id,False
+52,90.52039060420152,266.87,2.9481754700338274,9,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mk.movie_id = t.id,False
+53,76.84453646827271,205.219,2.670573648724592,9,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mk.movie_id = t.id,False
+54,119.83558921577774,373.358,3.1155853127797486,9,3,mi.movie_id = t.id|mc.movie_id = t.id|mk.movie_id = t.id,False
+55,2175.4044992643776,5238.671,2.408136463912334,11,4,mk.movie_id = t.id|mc.movie_id = mk.movie_id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+56,2247.7351475419655,3665.676,1.630830940824707,11,4,mk.movie_id = t.id|mc.movie_id = mk.movie_id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+57,13684.52586916729,382592.7,27.958052120901208,13,4,ci.movie_id = t.id|mk.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id,False
+58,13.20225410047292,859.148,65.07585778273504,9,4,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mi.movie_id = t.id|mi.movie_id = mk.movie_id|mk.movie_id = t.id|mc.movie_id = t.id,False
+59,22169.475363063597,3.0419172e+06,137.21196375571955,14,4,ci.movie_id = t.id|mk.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = t.id,False
+60,45301.43303259879,196107.77,4.328952805618343,11,4,ci.movie_id = t.id|mi.movie_id = t.id,False
+61,11453.796613556513,17496.256,1.527550772000503,11,4,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mk.movie_id = t.id|mi.movie_id = mk.movie_id|mi.movie_id = t.id|mi.movie_id = mi_idx.movie_id|mi_idx.movie_id = t.id,False
+62,14394.394345564258,46271.875,3.2145760279423654,11,3,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mk.movie_id = t.id|mi_idx.movie_id = t.id,False
+63,7635.01217689744,29897.566,3.9158505204112406,10,3,ci.movie_id = t.id|ci.movie_id = mk.movie_id|mk.movie_id = t.id|mi_idx.movie_id = mk.movie_id|mi_idx.movie_id = t.id,False
+64,37.47165814824774,120.711,3.2213946353158907,9,3,mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mk.movie_id = t.id,False
+65,12354.13054553394,13652.738,1.1051152673941518,12,4,mk.movie_id = t.id|mc.movie_id = t.id|mi.movie_id = t.id|mi_idx.movie_id = t.id,False
+66,6223.712355553546,8976.745,1.4423457583442727,12,4,mk.movie_id = t.id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mi_idx.movie_id = t.id,False
+67,236.66064923144327,3974.483,16.79401676224334,10,4,ci.movie_id = t.id|ci.movie_id = mi.movie_id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mk.movie_id = t.id,False
+68,70.07760576302164,1058.481,15.104410967045144,10,4,ci.movie_id = t.id|ci.movie_id = mi.movie_id|mi.movie_id = t.id|mc.movie_id = mi.movie_id|mc.movie_id = t.id|mk.movie_id = t.id,False
+69,27493.781205428262,102860.69,3.7412346716315468,10,4,ci.movie_id = t.id|mi.movie_id = t.id,False

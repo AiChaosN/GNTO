@@ -1,0 +1,13 @@
+{
+  "experiment": "exp3_e2e",
+  "out_dir": "results/main_runs/job112/references/pg_default",
+  "args": {
+    "hint_plans": "data/e2e/hint_plans_v2_job112",
+    "out": "results/main_runs/job112/references",
+    "tag": "",
+    "candidate_policy": "complete",
+    "deduplicate": true
+  },
+  "started": "2026-09-30T09:53:38",
+  "steerer": "pg_default"
+}

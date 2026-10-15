@@ -1,0 +1,455 @@
+{
+  "split_seed": 42,
+  "training_seed": 123,
+  "group": "template",
+  "queries": {
+    "10a_ceb": {
+      "fold": 0,
+      "template": "10_ceb"
+    },
+    "10a_job": {
+      "fold": 2,
+      "template": "10_job"
+    },
+    "10b_job": {
+      "fold": 2,
+      "template": "10_job"
+    },
+    "10c_job": {
+      "fold": 2,
+      "template": "10_job"
+    },
+    "11a_job": {
+      "fold": 4,
+      "template": "11_job"
+    },
+    "11b_job": {
+      "fold": 4,
+      "template": "11_job"
+    },
+    "11c_job": {
+      "fold": 4,
+      "template": "11_job"
+    },
+    "11d_job": {
+      "fold": 4,
+      "template": "11_job"
+    },
+    "12a_job": {
+      "fold": 4,
+      "template": "12_job"
+    },
+    "12b_job": {
+      "fold": 4,
+      "template": "12_job"
+    },
+    "12c_job": {
+      "fold": 4,
+      "template": "12_job"
+    },
+    "13a_job": {
+      "fold": 0,
+      "template": "13_job"
+    },
+    "13b_job": {
+      "fold": 0,
+      "template": "13_job"
+    },
+    "13c_job": {
+      "fold": 0,
+      "template": "13_job"
+    },
+    "13d_job": {
+      "fold": 0,
+      "template": "13_job"
+    },
+    "14a_job": {
+      "fold": 3,
+      "template": "14_job"
+    },
+    "14b_job": {
+      "fold": 3,
+      "template": "14_job"
+    },
+    "14c_job": {
+      "fold": 3,
+      "template": "14_job"
+    },
+    "15a_job": {
+      "fold": 4,
+      "template": "15_job"
+    },
+    "15b_job": {
+      "fold": 4,
+      "template": "15_job"
+    },
+    "16a_job": {
+      "fold": 2,
+      "template": "16_job"
+    },
+    "16b_job": {
+      "fold": 2,
+      "template": "16_job"
+    },
+    "16c_job": {
+      "fold": 2,
+      "template": "16_job"
+    },
+    "16d_job": {
+      "fold": 2,
+      "template": "16_job"
+    },
+    "17a_job": {
+      "fold": 4,
+      "template": "17_job"
+    },
+    "17b_job": {
+      "fold": 4,
+      "template": "17_job"
+    },
+    "17c_job": {
+      "fold": 4,
+      "template": "17_job"
+    },
+    "17d_job": {
+      "fold": 4,
+      "template": "17_job"
+    },
+    "17e_job": {
+      "fold": 4,
+      "template": "17_job"
+    },
+    "17f_job": {
+      "fold": 4,
+      "template": "17_job"
+    },
+    "18a_job": {
+      "fold": 2,
+      "template": "18_job"
+    },
+    "18b_job": {
+      "fold": 2,
+      "template": "18_job"
+    },
+    "18c_job": {
+      "fold": 2,
+      "template": "18_job"
+    },
+    "19a_job": {
+      "fold": 3,
+      "template": "19_job"
+    },
+    "19b_job": {
+      "fold": 3,
+      "template": "19_job"
+    },
+    "19c_job": {
+      "fold": 3,
+      "template": "19_job"
+    },
+    "19d_job": {
+      "fold": 3,
+      "template": "19_job"
+    },
+    "1a_job": {
+      "fold": 1,
+      "template": "1_job"
+    },
+    "1b_job": {
+      "fold": 1,
+      "template": "1_job"
+    },
+    "1c_job": {
+      "fold": 1,
+      "template": "1_job"
+    },
+    "1d_job": {
+      "fold": 1,
+      "template": "1_job"
+    },
+    "20a_job": {
+      "fold": 4,
+      "template": "20_job"
+    },
+    "20b_job": {
+      "fold": 4,
+      "template": "20_job"
+    },
+    "20c_job": {
+      "fold": 4,
+      "template": "20_job"
+    },
+    "21a_job": {
+      "fold": 3,
+      "template": "21_job"
+    },
+    "21b_job": {
+      "fold": 3,
+      "template": "21_job"
+    },
+    "21c_job": {
+      "fold": 3,
+      "template": "21_job"
+    },
+    "22a_job": {
+      "fold": 2,
+      "template": "22_job"
+    },
+    "22b_job": {
+      "fold": 2,
+      "template": "22_job"
+    },
+    "22c_job": {
+      "fold": 2,
+      "template": "22_job"
+    },
+    "22d_job": {
+      "fold": 2,
+      "template": "22_job"
+    },
+    "23a_job": {
+      "fold": 1,
+      "template": "23_job"
+    },
+    "23b_job": {
+      "fold": 1,
+      "template": "23_job"
+    },
+    "23c_job": {
+      "fold": 1,
+      "template": "23_job"
+    },
+    "24a_job": {
+      "fold": 1,
+      "template": "24_job"
+    },
+    "24b_job": {
+      "fold": 1,
+      "template": "24_job"
+    },
+    "25a_job": {
+      "fold": 2,
+      "template": "25_job"
+    },
+    "25b_job": {
+      "fold": 2,
+      "template": "25_job"
+    },
+    "25c_job": {
+      "fold": 2,
+      "template": "25_job"
+    },
+    "26a_job": {
+      "fold": 3,
+      "template": "26_job"
+    },
+    "26b_job": {
+      "fold": 3,
+      "template": "26_job"
+    },
+    "26c_job": {
+      "fold": 3,
+      "template": "26_job"
+    },
+    "27a_job": {
+      "fold": 0,
+      "template": "27_job"
+    },
+    "27b_job": {
+      "fold": 0,
+      "template": "27_job"
+    },
+    "27c_job": {
+      "fold": 0,
+      "template": "27_job"
+    },
+    "28a_job": {
+      "fold": 0,
+      "template": "28_job"
+    },
+    "28b_job": {
+      "fold": 0,
+      "template": "28_job"
+    },
+    "28c_job": {
+      "fold": 0,
+      "template": "28_job"
+    },
+    "29a_job": {
+      "fold": 0,
+      "template": "29_job"
+    },
+    "29b_job": {
+      "fold": 0,
+      "template": "29_job"
+    },
+    "29c_job": {
+      "fold": 0,
+      "template": "29_job"
+    },
+    "2a_job": {
+      "fold": 1,
+      "template": "2_job"
+    },
+    "2b_job": {
+      "fold": 1,
+      "template": "2_job"
+    },
+    "2c_job": {
+      "fold": 1,
+      "template": "2_job"
+    },
+    "2d_job": {
+      "fold": 1,
+      "template": "2_job"
+    },
+    "30a_job": {
+      "fold": 1,
+      "template": "30_job"
+    },
+    "30b_job": {
+      "fold": 1,
+      "template": "30_job"
+    },
+    "30c_job": {
+      "fold": 1,
+      "template": "30_job"
+    },
+    "31a_job": {
+      "fold": 2,
+      "template": "31_job"
+    },
+    "31b_job": {
+      "fold": 2,
+      "template": "31_job"
+    },
+    "31c_job": {
+      "fold": 2,
+      "template": "31_job"
+    },
+    "32a_job": {
+      "fold": 0,
+      "template": "32_job"
+    },
+    "32b_job": {
+      "fold": 0,
+      "template": "32_job"
+    },
+    "33a_job": {
+      "fold": 0,
+      "template": "33_job"
+    },
+    "33b_job": {
+      "fold": 0,
+      "template": "33_job"
+    },
+    "3a_job": {
+      "fold": 3,
+      "template": "3_job"
+    },
+    "3b_job": {
+      "fold": 3,
+      "template": "3_job"
+    },
+    "3c_job": {
+      "fold": 3,
+      "template": "3_job"
+    },
+    "4a_job": {
+      "fold": 3,
+      "template": "4_job"
+    },
+    "4b_job": {
+      "fold": 3,
+      "template": "4_job"
+    },
+    "4c_job": {
+      "fold": 3,
+      "template": "4_job"
+    },
+    "5a_job": {
+      "fold": 4,
+      "template": "5_job"
+    },
+    "5b_job": {
+      "fold": 4,
+      "template": "5_job"
+    },
+    "5c_job": {
+      "fold": 4,
+      "template": "5_job"
+    },
+    "6a_job": {
+      "fold": 4,
+      "template": "6_job"
+    },
+    "6b_job": {
+      "fold": 4,
+      "template": "6_job"
+    },
+    "6c_job": {
+      "fold": 4,
+      "template": "6_job"
+    },
+    "6d_job": {
+      "fold": 4,
+      "template": "6_job"
+    },
+    "6e_job": {
+      "fold": 4,
+      "template": "6_job"
+    },
+    "6f_job": {
+      "fold": 4,
+      "template": "6_job"
+    },
+    "7a_job": {
+      "fold": 2,
+      "template": "7_job"
+    },
+    "7b_job": {
+      "fold": 2,
+      "template": "7_job"
+    },
+    "7c_job": {
+      "fold": 2,
+      "template": "7_job"
+    },
+    "8a_job": {
+      "fold": 3,
+      "template": "8_job"
+    },
+    "8b_ceb": {
+      "fold": 1,
+      "template": "8_ceb"
+    },
+    "8b_job": {
+      "fold": 3,
+      "template": "8_job"
+    },
+    "8c_job": {
+      "fold": 3,
+      "template": "8_job"
+    },
+    "8d_job": {
+      "fold": 3,
+      "template": "8_job"
+    },
+    "9a_job": {
+      "fold": 1,
+      "template": "9_job"
+    },
+    "9b_job": {
+      "fold": 1,
+      "template": "9_job"
+    },
+    "9c_job": {
+      "fold": 1,
+      "template": "9_job"
+    },
+    "9d_job": {
+      "fold": 1,
+      "template": "9_job"
+    }
+  }
+}

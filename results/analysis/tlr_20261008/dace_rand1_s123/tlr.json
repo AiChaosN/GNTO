@@ -1,0 +1,13 @@
+{
+  "inputs": "TLR",
+  "channels": [
+    "type one-hot",
+    "local cost",
+    "root cost",
+    "rows"
+  ],
+  "local_cost_scaler": {
+    "center": 1000.1999999999971,
+    "scale": 11212.059999999983
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "steerer": "gnto_kfold",
+  "n_queries": 112,
+  "total_runtime_ms": 126370.29507313855,
+  "pg_default_total_ms": 93518.85607180884,
+  "oracle_total_ms": 36403.97922991542,
+  "speedup_vs_pg_default": 0.7400382820795307,
+  "runtime_vs_oracle": 3.4713319188274943,
+  "mean_rel_regret": 6.523495901285151,
+  "median_rel_regret": 1.569225703041041,
+  "p90_rel_regret": 11.17759912680368,
+  "max_rel_regret": 227.56022172231255,
+  "wins_vs_pg_default": 20,
+  "losses_vs_pg_default": 66,
+  "regressions_2x": 29,
+  "oracle_hits": 15,
+  "rel_speedup_geomean": 0.6837258053637425,
+  "rel_speedup_geomean_trimmed": 0.7051758468103361,
+  "rel_speedup_mean": 0.8575681492590252,
+  "rel_speedup_p10": 0.2940083678534735,
+  "rel_speedup_p25": 0.49124614767427927,
+  "rel_speedup_p50": 0.9359250692351759,
+  "rel_speedup_p75": 1.0,
+  "rel_speedup_p90": 1.0439317857938137,
+  "rel_speedup_min": 0.03844772275607914,
+  "better_n": 10,
+  "worse_n": 59,
+  "tie_n": 43,
+  "better_pct": 8.928571428571429,
+  "worse_pct": 52.67857142857143,
+  "tie_pct": 38.392857142857146,
+  "tol": 0.05,
+  "moved_n": 86,
+  "moved_better_pct": 11.627906976744185,
+  "moved_worse_pct": 68.6046511627907,
+  "wilcoxon_p_vs_pg": 3.598071950119443e-08,
+  "sign_test_p": 1.3765197153783534e-09,
+  "template_cluster_interval": {
+    "geomean": 0.6837258053637425,
+    "ci95_low": 0.5729745922528422,
+    "ci95_high": 0.8035757519392392,
+    "n_queries": 112,
+    "n_templates": 35,
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 0,
+    "resampling_unit": "template",
+    "weighting": "query",
+    "conditional_on_fitted_models": true,
+    "template_equal_weight_geomean": 0.6944577032806794,
+    "template_wilcoxon_p": 3.927362091507246e-05
+  },
+  "by_join_bucket": {
+    "3-4": {
+      "n": 23,
+      "total_runtime_ms": 21852.826182963327,
+      "pg_default_total_ms": 7358.3362069912255,
+      "oracle_total_ms": 3311.007368960418,
+      "speedup_vs_pg_default": 0.3367224058519193,
+      "mean_rel_regret": 18.386392167010204,
+      "rel_speedup_geomean": 0.5050479287172337,
+      "rel_speedup_p50": 0.9926988225921499,
+      "better_n": 0,
+      "worse_n": 11,
+      "tie_n": 12
+    },
+    "5+": {
+      "n": 89,
+      "total_runtime_ms": 104517.46889017522,
+      "pg_default_total_ms": 86160.51986481762,
+      "oracle_total_ms": 33092.971860955004,
+      "speedup_vs_pg_default": 0.8243647763356505,
+      "mean_rel_regret": 3.457803607895532,
+      "rel_speedup_geomean": 0.7393973298938469,
+      "rel_speedup_p50": 0.9136439249805542,
+      "better_n": 10,
+      "worse_n": 48,
+      "tie_n": 31
+    }
+  },
+  "timeout_picks": 0,
+  "timeout_pick_pct": 0.0,
+  "params": {
+    "total": 2275910,
+    "trainable": 2275910
+  },
+  "finished": "2026-10-03T14:17:18",
+  "prediction_quality": {
+    "n_plans": 1895,
+    "censored_plans_excluded_from_accuracy": 4,
+    "q50": 2.6390033089464584,
+    "q90": 15.98691798920941,
+    "q99": 96.85335217096167,
+    "q_mean": 11.870685461913858,
+    "per_query_spearman_mean": 0.40894070187592124,
+    "per_query_spearman_median": 0.5470807453416149,
+    "per_query_kendall_mean": 0.315003240709885,
+    "global_spearman": 0.42977757314339937
+  },
+  "model": "reqo",
+  "folds": 5,
+  "seed": 42,
+  "split_seed": 42,
+  "plan_representation": "ordered-binary-v1",
+  "native_tree_adapter": null,
+  "candidate_policy": "complete",
+  "deduplicate": true,
+  "epochs": 100,
+  "native_timeout_target": "budget-capped",
+  "rank_weight": 0.0,
+  "rank_space": "log",
+  "drop_features": "",
+  "features": "dace",
+  "group": "template",
+  "extra_train": "",
+  "preset": "dace_zero_shot",
+  "overrides": [],
+  "fold_info": [
+    {
+      "fold": 0,
+      "n_train": 1508,
+      "n_test": 391,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 224.04773259162903,
+      "epochs": 29,
+      "selected_epoch": 8,
+      "final_loss": -0.6186864102803031
+    },
+    {
+      "fold": 1,
+      "n_train": 1537,
+      "n_test": 362,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 163.2909438610077,
+      "epochs": 24,
+      "selected_epoch": 3,
+      "final_loss": -0.5132171961143086
+    },
+    {
+      "fold": 2,
+      "n_train": 1554,
+      "n_test": 345,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 576.7736744880676,
+      "epochs": 60,
+      "selected_epoch": 39,
+      "final_loss": -1.1751538054610615
+    },
+    {
+      "fold": 3,
+      "n_train": 1509,
+      "n_test": 390,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 509.615487575531,
+      "epochs": 41,
+      "selected_epoch": 20,
+      "final_loss": -1.0323643202965076
+    },
+    {
+      "fold": 4,
+      "n_train": 1488,
+      "n_test": 411,
+      "in_dim": 902,
+      "n_node_types": 15,
+      "train_s": 418.97380113601685,
+      "epochs": 39,
+      "selected_epoch": 18,
+      "final_loss": -0.5748127203132338
+    }
+  ],
+  "reqo_inputs": "full",
+  "reqo_config": {
+    "batch_size": 128,
+    "learning_rate": 0.001,
+    "encoder_attention_heads": 1,
+    "encoder_conv_layers": 3,
+    "encoder_gnn_embedding_dim": 256,
+    "encoder_gnn_dropout_rate": 0.1,
+    "encoder_dirgnn_alpha": 0.3,
+    "encoder_node_type_embedding_dim": 16,
+    "encoder_column_embedding_dim": 8,
+    "estimator_fcn_layers": 4,
+    "estimator_estimation_embedding_dim": 512,
+    "estimator_fcn_dropout_rate": 0.1,
+    "pairrankingloss_margin": 3
+  },
+  "selection_score": "integrated score IC",
+  "reqo_epoch_selection": "val",
+  "reqo_epochs": [
+    {
+      "selected_epoch": 8,
+      "epochs_run": 29
+    },
+    {
+      "selected_epoch": 3,
+      "epochs_run": 24
+    },
+    {
+      "selected_epoch": 39,
+      "epochs_run": 60
+    },
+    {
+      "selected_epoch": 20,
+      "epochs_run": 41
+    },
+    {
+      "selected_epoch": 18,
+      "epochs_run": 39
+    }
+  ],
+  "reqo_source": "https://github.com/BaomingChang/Reqo-on-PostgreSQL",
+  "reqo_text_encoding": {
+    "failed_nodes": 0,
+    "nodes": 256425,
+    "column_kinds": {
+      "numeric": 55,
+      "date": 0,
+      "text": 46,
+      "other": 7
+    },
+    "catalog": "data/e2e/hint_plans_v2_job112/pg_catalog_snapshot.json"
+  }
+}

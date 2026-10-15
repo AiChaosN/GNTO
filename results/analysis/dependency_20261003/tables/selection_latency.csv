@@ -1,0 +1,4 @@
+model,params,plans_per_query,forward_ms_median,forward_ms_p95
+"GNTO (PG-stat, GATv2)",55745,15.0,0.9197655017487705,1.798333626356907
+BiGG encoder in GNTO (PG-stat),167684,15.0,2.0522315171547234,4.0983416052768
+"Reqo (released network, Reqo inputs)",2275910,15.0,13.726987497648224,35.69619665795471

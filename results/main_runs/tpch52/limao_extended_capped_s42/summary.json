@@ -1,0 +1,325 @@
+{
+  "steerer": "limao_kfold",
+  "n_queries": 52,
+  "total_runtime_ms": 57068.83579591522,
+  "pg_default_total_ms": 22392.874119919725,
+  "oracle_total_ms": 18422.709456062876,
+  "speedup_vs_pg_default": 0.39238358041855353,
+  "runtime_vs_oracle": 3.0977438976618057,
+  "mean_rel_regret": 35.558775690607575,
+  "median_rel_regret": 1.4069503836784163,
+  "p90_rel_regret": 8.68153769790717,
+  "max_rel_regret": 1720.9680287154358,
+  "wins_vs_pg_default": 9,
+  "losses_vs_pg_default": 27,
+  "regressions_2x": 13,
+  "oracle_hits": 16,
+  "rel_speedup_geomean": 0.603465386913474,
+  "rel_speedup_geomean_trimmed": 0.7074673275263527,
+  "rel_speedup_mean": 0.7738801698220947,
+  "rel_speedup_p10": 0.2648492269977929,
+  "rel_speedup_p25": 0.5211514773570514,
+  "rel_speedup_p50": 0.9797534375854956,
+  "rel_speedup_p75": 1.0,
+  "rel_speedup_p90": 1.0145078950997475,
+  "rel_speedup_min": 0.0016993837355297775,
+  "better_n": 3,
+  "worse_n": 25,
+  "tie_n": 24,
+  "better_pct": 5.769230769230769,
+  "worse_pct": 48.07692307692308,
+  "tie_pct": 46.15384615384615,
+  "tol": 0.05,
+  "moved_n": 36,
+  "moved_better_pct": 8.333333333333334,
+  "moved_worse_pct": 69.44444444444444,
+  "wilcoxon_p_vs_pg": 3.359907913256955e-05,
+  "sign_test_p": 2.744048833847046e-05,
+  "template_cluster_interval": {
+    "geomean": 0.603465386913474,
+    "ci95_low": 0.39736583823656896,
+    "ci95_high": 0.8551987742850837,
+    "n_queries": 52,
+    "n_templates": 13,
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 0,
+    "resampling_unit": "template",
+    "weighting": "query",
+    "conditional_on_fitted_models": true,
+    "template_equal_weight_geomean": 0.6034653869134738,
+    "template_wilcoxon_p": 0.0078125
+  },
+  "by_join_bucket": {
+    "1-2": {
+      "n": 28,
+      "total_runtime_ms": 36832.592572958674,
+      "pg_default_total_ms": 8448.242434009444,
+      "oracle_total_ms": 8391.658807988279,
+      "speedup_vs_pg_default": 0.2293686608477264,
+      "mean_rel_regret": 63.926706060900244,
+      "rel_speedup_geomean": 0.4814429756041484,
+      "rel_speedup_p50": 0.9642607331216447,
+      "better_n": 0,
+      "worse_n": 14,
+      "tie_n": 14
+    },
+    "3-4": {
+      "n": 12,
+      "total_runtime_ms": 12647.38423289964,
+      "pg_default_total_ms": 7530.380820971914,
+      "oracle_total_ms": 5430.091180081945,
+      "speedup_vs_pg_default": 0.5954101403342467,
+      "mean_rel_regret": 2.0451782258627547,
+      "rel_speedup_geomean": 0.7355155848282154,
+      "rel_speedup_p50": 0.9599813430580084,
+      "better_n": 0,
+      "worse_n": 6,
+      "tie_n": 6
+    },
+    "5+": {
+      "n": 12,
+      "total_runtime_ms": 7588.858990056906,
+      "pg_default_total_ms": 6414.250864938367,
+      "oracle_total_ms": 4600.959467992652,
+      "speedup_vs_pg_default": 0.84521940298831,
+      "mean_rel_regret": 2.880535624669559,
+      "rel_speedup_geomean": 0.8387458335632278,
+      "rel_speedup_p50": 1.0139082788540714,
+      "better_n": 3,
+      "worse_n": 5,
+      "tie_n": 4
+    }
+  },
+  "timeout_picks": 0,
+  "timeout_pick_pct": 0.0,
+  "params": {
+    "total": 788164,
+    "trainable": 788164
+  },
+  "finished": "2026-09-30T09:27:14",
+  "prediction_quality": {
+    "n_plans": 643,
+    "censored_plans_excluded_from_accuracy": 0,
+    "q50": 2.6693666802894045,
+    "q90": 20.18643588221148,
+    "q99": 89.58197708080328,
+    "q_mean": 19.215575213735267,
+    "per_query_spearman_mean": 0.21448969221977948,
+    "per_query_spearman_median": 0.37907239819004523,
+    "per_query_kendall_mean": 0.16051444685345617,
+    "global_spearman": 0.2953586464645693
+  },
+  "model": "limao",
+  "folds": 5,
+  "seed": 42,
+  "split_seed": 42,
+  "plan_representation": "ordered-binary-v1",
+  "native_tree_adapter": "extended-tree-v1",
+  "candidate_policy": "complete",
+  "deduplicate": true,
+  "epochs": 100,
+  "native_timeout_target": "budget-capped",
+  "rank_weight": 0.0,
+  "rank_space": "log",
+  "drop_features": "",
+  "features": "dace",
+  "group": "template",
+  "extra_train": "",
+  "preset": null,
+  "overrides": [],
+  "fold_info": [
+    {
+      "fold": 0,
+      "n_train": 534,
+      "n_test": 109,
+      "train_s": 63.228413820266724,
+      "score_s": 0.18557381629943848,
+      "epochs_run": 58,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s42/limao_folds/fold0_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 30972,
+        "b0": 232,
+        "b1": 30740,
+        "c0": 2958,
+        "c1": 21750,
+        "c2": 6264
+      },
+      "module_usage_test_first": {
+        "a0": 12,
+        "b1": 12,
+        "c1": 8,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 109,
+        "b1": 109,
+        "c1": 81,
+        "c2": 28
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 1,
+      "n_train": 443,
+      "n_test": 200,
+      "train_s": 37.91639494895935,
+      "score_s": 0.3613314628601074,
+      "epochs_run": 41,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s42/limao_folds/fold1_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 18163,
+        "b0": 328,
+        "b1": 17835,
+        "c0": 1927,
+        "c1": 13448,
+        "c2": 2788
+      },
+      "module_usage_test_first": {
+        "a0": 12,
+        "b1": 12,
+        "c1": 8,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 200,
+        "b0": 8,
+        "b1": 192,
+        "c0": 9,
+        "c1": 159,
+        "c2": 32
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 2,
+      "n_train": 515,
+      "n_test": 128,
+      "train_s": 43.92780637741089,
+      "score_s": 0.21452808380126953,
+      "epochs_run": 41,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s42/limao_folds/fold2_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 21115,
+        "b0": 328,
+        "b1": 20787,
+        "c0": 2419,
+        "c1": 13940,
+        "c2": 4756
+      },
+      "module_usage_test_first": {
+        "a0": 12,
+        "b1": 12,
+        "c1": 8,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 128,
+        "b0": 8,
+        "b1": 120,
+        "c1": 100,
+        "c2": 28
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 3,
+      "n_train": 547,
+      "n_test": 96,
+      "train_s": 38.205769062042236,
+      "score_s": 0.1613781452178955,
+      "epochs_run": 33,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s42/limao_folds/fold3_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 18051,
+        "b0": 264,
+        "b1": 17787,
+        "c0": 1023,
+        "c1": 12672,
+        "c2": 4356
+      },
+      "module_usage_test_first": {
+        "a0": 8,
+        "b1": 8,
+        "c1": 8
+      },
+      "module_usage_test_per_plan": {
+        "a0": 96,
+        "b1": 96,
+        "c0": 12,
+        "c1": 70,
+        "c2": 14
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 4,
+      "n_train": 533,
+      "n_test": 110,
+      "train_s": 31.60304021835327,
+      "score_s": 0.24248266220092773,
+      "epochs_run": 29,
+      "checkpoint": "results/main_runs/tpch52/limao_extended_capped_s42/limao_folds/fold4_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 15457,
+        "b0": 580,
+        "b1": 14877,
+        "c0": 1624,
+        "c1": 9657,
+        "c2": 4176
+      },
+      "module_usage_test_first": {
+        "a0": 8,
+        "b1": 8,
+        "c1": 8
+      },
+      "module_usage_test_per_plan": {
+        "a0": 110,
+        "b0": 4,
+        "b1": 106,
+        "c1": 87,
+        "c2": 23
+      },
+      "assign": "per_plan"
+    }
+  ]
+}

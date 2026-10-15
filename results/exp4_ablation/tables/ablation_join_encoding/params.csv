@@ -1,0 +1,3 @@
+model,dir,total_params,trainable_params
+GNTO (string-id join),gnto_joinid,299477,299477
+GNTO,gnto,302613,302613

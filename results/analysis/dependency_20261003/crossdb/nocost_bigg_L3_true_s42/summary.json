@@ -1,0 +1,266 @@
+{
+  "model": "bigg",
+  "params": {
+    "total": 164612,
+    "trainable": 164612
+  },
+  "split": {
+    "name": "paper",
+    "train_ids": [
+      3,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      18,
+      19
+    ],
+    "test_ids": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      17
+    ],
+    "train_dbs": [
+      "basketball",
+      "geneea",
+      "genome",
+      "hepatitis",
+      "imdb_full",
+      "movielens",
+      "seznam",
+      "ssb",
+      "tpc_h",
+      "walmart"
+    ],
+    "test_dbs": [
+      "accidents",
+      "airline",
+      "baseball",
+      "carcinogenesis",
+      "consumer",
+      "credit",
+      "employee",
+      "fhnk",
+      "financial",
+      "tournament"
+    ],
+    "n_train": 54000,
+    "n_val": 6000
+  },
+  "statistics_scope": "train",
+  "cache_id": "97f0140f93ff71746923",
+  "qerror": {
+    "accidents": {
+      "n": 5000,
+      "q50": 1.9199834869107626,
+      "q75": 2.48431694244621,
+      "q90": 3.47510198468744,
+      "q95": 4.9133185901500145,
+      "q99": 13.314515502404333,
+      "q_mean": 2.4818430914946368,
+      "q_max": 65.99765397274999
+    },
+    "airline": {
+      "n": 5000,
+      "q50": 2.5419815767164824,
+      "q75": 6.7288107819725,
+      "q90": 15.382082933801087,
+      "q95": 18.67970714206231,
+      "q99": 23.443343632214074,
+      "q_mean": 5.3323246262489805,
+      "q_max": 43.32394329408845
+    },
+    "baseball": {
+      "n": 5000,
+      "q50": 2.0027459816927946,
+      "q75": 3.517414231137808,
+      "q90": 6.817781441065326,
+      "q95": 11.184746043815364,
+      "q99": 31.064835686967893,
+      "q_mean": 3.798691996816291,
+      "q_max": 201.2330552632852
+    },
+    "carcinogenesis": {
+      "n": 5000,
+      "q50": 1.5989138906384461,
+      "q75": 2.307570701382819,
+      "q90": 4.419975794495675,
+      "q95": 5.846670825684751,
+      "q99": 7.17214314811628,
+      "q_mean": 2.180648916360416,
+      "q_max": 52.78309024773311
+    },
+    "consumer": {
+      "n": 5000,
+      "q50": 1.3231881725038526,
+      "q75": 1.6409035434458854,
+      "q90": 2.1556518380929353,
+      "q95": 2.8459311597359433,
+      "q99": 4.5893081628332135,
+      "q_mean": 1.5301522999470505,
+      "q_max": 6.751874511765649
+    },
+    "credit": {
+      "n": 5000,
+      "q50": 1.44112958985917,
+      "q75": 1.9854586111722001,
+      "q90": 3.1328745489558436,
+      "q95": 4.450522883826016,
+      "q99": 9.751626781350634,
+      "q_mean": 1.9381989164134745,
+      "q_max": 120.45724726132566
+    },
+    "employee": {
+      "n": 5000,
+      "q50": 1.5965879842406525,
+      "q75": 2.179013469231747,
+      "q90": 2.7296123210131102,
+      "q95": 3.3467921504309173,
+      "q99": 5.200495608391965,
+      "q_mean": 1.8437998510186175,
+      "q_max": 32.43975984893264
+    },
+    "fhnk": {
+      "n": 5000,
+      "q50": 1.5254163775227938,
+      "q75": 2.1342812807196037,
+      "q90": 3.1113730803740363,
+      "q95": 4.285562869052796,
+      "q99": 10.287622660002931,
+      "q_mean": 2.0921088682406275,
+      "q_max": 112.59565493234456
+    },
+    "financial": {
+      "n": 5000,
+      "q50": 1.784371141763148,
+      "q75": 2.244917394311135,
+      "q90": 2.716936016641624,
+      "q95": 3.0451011892217457,
+      "q99": 4.61418002163101,
+      "q_mean": 1.9090274771900044,
+      "q_max": 41.62953097603184
+    },
+    "tournament": {
+      "n": 5000,
+      "q50": 1.5094972685950867,
+      "q75": 2.3101110159405067,
+      "q90": 4.328763088836556,
+      "q95": 9.424740626502414,
+      "q99": 47.626582105494364,
+      "q_mean": 3.4867306005518794,
+      "q_max": 202.07643718855115
+    }
+  },
+  "avg": {
+    "q50": 1.7243815470443191,
+    "q75": 2.753279797176041,
+    "q90": 4.8270153047963635,
+    "q95": 6.802309348048229,
+    "q99": 15.70646533094067,
+    "q_mean": 2.659352664428198
+  },
+  "train": {
+    "best_epoch": 99,
+    "best_metric": 1.4594328427247159,
+    "select": "last",
+    "epochs": 100,
+    "ckpt": "results/analysis/dependency_20261003/crossdb/nocost_bigg_L3_true_s42/best_model.pt",
+    "trained_here": true
+  },
+  "timing_s": {
+    "featurize_s": 8.027282476425171,
+    "train_s": 2649.1991713047028
+  },
+  "finished": "2026-10-03T13:09:05",
+  "study": {
+    "arm": "bigg",
+    "features": "nocost",
+    "conv": "bigg",
+    "layers": 3,
+    "heads": 1,
+    "virtual_node": false,
+    "topology": "true",
+    "source": "https://github.com/BaomingChang/Reqo-on-PostgreSQL"
+  },
+  "gnto_config_for_node_encoder_and_head": {
+    "node": {
+      "kind": "mlp",
+      "out_dim": 64,
+      "dropout": 0.0,
+      "activation": "relu",
+      "in_dim": 21,
+      "hidden_dim": 64,
+      "num_layers": 2,
+      "norm": "layer",
+      "num_node_types": 32,
+      "num_cols": 64,
+      "num_ops": 8,
+      "type_dim": 16,
+      "num_numeric": 2,
+      "numeric_log1p": true,
+      "numeric_norm": "batch",
+      "numeric_dim": 8,
+      "pred_slots": 3,
+      "pred_col_dim": 16,
+      "pred_op_dim": 8,
+      "pred_dim": 32,
+      "pred_pool": "sum",
+      "embed_size": 64,
+      "vocab": {
+        "types": 20,
+        "tables": 20,
+        "joins": 10,
+        "columns": 30,
+        "ops": 10
+      },
+      "use_hist": true,
+      "use_sample": true,
+      "bin_number": 50,
+      "plan_rows": true,
+      "join_encoding": "id"
+    },
+    "graph": {
+      "conv": "none",
+      "num_layers": 3,
+      "hidden_dim": 64,
+      "out_dim": 64,
+      "heads": 1,
+      "concat_last": false,
+      "edge_mode": "as_is",
+      "self_loops": true,
+      "virtual_node": false,
+      "residual": true,
+      "norm": "layer",
+      "activation": "elu",
+      "dropout": 0.1,
+      "attn_dropout": 0.1,
+      "edge_dropout": 0.0,
+      "jk": "last"
+    },
+    "readout": {
+      "pooling": "mean",
+      "gate_hidden": 0
+    },
+    "head": {
+      "kind": "resmlp",
+      "hidden_dim": 64,
+      "num_blocks": 2,
+      "dropout": 0.1,
+      "out_dim": 1,
+      "out_activation": "sigmoid"
+    },
+    "name": "dace_zero_shot",
+    "notes": "GNTO_DACE_Model equivalent; set node.in_dim = num_node_types + 2"
+  },
+  "bigg_width": 64
+}

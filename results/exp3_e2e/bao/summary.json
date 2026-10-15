@@ -1,0 +1,98 @@
+{
+  "steerer": "bao",
+  "n_queries": 112,
+  "total_runtime_ms": 97270.984,
+  "pg_default_total_ms": 71066.698,
+  "oracle_total_ms": 30899.721,
+  "speedup_vs_pg_default": 0.7306053159696627,
+  "runtime_vs_oracle": 3.147956708088076,
+  "mean_rel_regret": 19.78117479106906,
+  "median_rel_regret": 1.6003342774681466,
+  "p90_rel_regret": 5.623245597627726,
+  "max_rel_regret": 794.4772727272727,
+  "wins_vs_pg_default": 27,
+  "losses_vs_pg_default": 82,
+  "regressions_2x": 9,
+  "oracle_hits": 3,
+  "by_join_bucket": {
+    "3-4": {
+      "n": 23,
+      "total_runtime_ms": 6298.058999999999,
+      "pg_default_total_ms": 5271.588,
+      "oracle_total_ms": 2769.75,
+      "speedup_vs_pg_default": 0.8370178812234056,
+      "mean_rel_regret": 74.49028456298747,
+      "rel_speedup_geomean": 0.8228953562927831,
+      "rel_speedup_p50": 0.8632890286849879,
+      "better_n": 0,
+      "worse_n": 17,
+      "tie_n": 6
+    },
+    "5+": {
+      "n": 89,
+      "total_runtime_ms": 90972.92500000002,
+      "pg_default_total_ms": 65795.11,
+      "oracle_total_ms": 28129.971000000005,
+      "speedup_vs_pg_default": 0.7232383700974767,
+      "mean_rel_regret": 5.6428655241687995,
+      "rel_speedup_geomean": 0.8813049073136875,
+      "rel_speedup_p50": 0.8667928620723652,
+      "better_n": 17,
+      "worse_n": 55,
+      "tie_n": 17
+    }
+  },
+  "params": {
+    "total": 132353
+  },
+  "finished": "2026-09-12T10:25:28",
+  "prediction_quality": {
+    "n_plans": 5397,
+    "q50": 3.54038460122889,
+    "q90": 42.762680555658086,
+    "q99": 350.6516934843214,
+    "q_mean": 83.30077269913468,
+    "per_query_spearman_mean": 0.38225900785069794,
+    "per_query_spearman_median": 0.5646478189723654,
+    "per_query_kendall_mean": 0.2660604073450982,
+    "global_spearman": 0.46264755116282513
+  },
+  "train": {
+    "trained_here": true,
+    "epochs": 100,
+    "n_train": 90000,
+    "val_qerror": {
+      "q50": 1.1884527973111778,
+      "q75": 1.6731796830885743,
+      "q90": 3.5524184393059826,
+      "q95": 6.432667879737009,
+      "q99": 16.172036269136793
+    },
+    "ckpt": "results/exp3_e2e/bao/bao_model"
+  },
+  "timing_s": {
+    "train_s": 2271.4874410629272,
+    "score_s": 3.5522308349609375
+  },
+  "rel_speedup_geomean": 0.8689810960762386,
+  "rel_speedup_geomean_trimmed": 0.8627019948680149,
+  "rel_speedup_mean": 1.0091154975846912,
+  "rel_speedup_p10": 0.6173429042296341,
+  "rel_speedup_p25": 0.7654530419233487,
+  "rel_speedup_p50": 0.8655908916404577,
+  "rel_speedup_p75": 1.0,
+  "rel_speedup_p90": 1.127967465806501,
+  "rel_speedup_min": 0.16958999901728034,
+  "better_n": 17,
+  "worse_n": 72,
+  "tie_n": 23,
+  "better_pct": 15.178571428571427,
+  "worse_pct": 64.28571428571429,
+  "tie_pct": 20.535714285714285,
+  "tol": 0.05,
+  "moved_n": 109,
+  "moved_better_pct": 15.596330275229358,
+  "moved_worse_pct": 66.05504587155963,
+  "wilcoxon_p_vs_pg": 2.075660264439797e-07,
+  "sign_test_p": 3.172739019043594e-09
+}

@@ -1,0 +1,7 @@
+model,dir,total_params,trainable_params
+"GNTO (softmax attn, mean pool)",gnto,302613,302613
+sigmoid attn,gnto_nonorm,302613,302613
+sum pool,gnto_sumpool,302613,302613
+sigmoid attn + sum pool,gnto_nonorm_sum,302613,302613
+gnto_gcn,gnto_gcn,140309,140309
+gnto_tcnn,gnto_tcnn,164885,164885

@@ -1,0 +1,7 @@
+model,dir,total_params,trainable_params
+GNTO,gnto,302613,302613
+GAT + child position,gnto_gatv2_pos,303957,303957
+gnto_gcn,gnto_gcn,140309,140309
+gnto_tcnn,gnto_tcnn,164885,164885
+TCNN + gated slots,gnto_tcnn_attn,190229,190229
+TCNN + softmax slots,gnto_tcnn_attn_softmax,190229,190229

@@ -1,0 +1,12 @@
+{
+  "inputs": "RESID",
+  "channels": [
+    "type one-hot",
+    "local cost",
+    "rows"
+  ],
+  "local_cost_scaler": {
+    "center": 1000.1000000000058,
+    "scale": 9561.130000000005
+  }
+}

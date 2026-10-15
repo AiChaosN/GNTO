@@ -1,0 +1,4 @@
+model,dir,total_params,trainable_params
+GAT (GATv2),gnto,302613,302613
+GNN (GCN),gnto_gcn,140309,140309
+TCNN,gnto_tcnn,164885,164885

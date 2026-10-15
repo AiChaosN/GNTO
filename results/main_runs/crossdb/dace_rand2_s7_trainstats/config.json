@@ -1,0 +1,36 @@
+{
+  "experiment": "exp2_dace",
+  "out_dir": "results/main_runs/crossdb/dace_rand2_s7_trainstats",
+  "args": {
+    "root_only": false,
+    "data_dir": "data/dace/workload1",
+    "split": "rand",
+    "split_seed": 2,
+    "statistics": "train",
+    "val_frac": 0.1,
+    "limit": null,
+    "no_cache": false,
+    "epochs": 100,
+    "bs": 512,
+    "lr": 0.001,
+    "seed": 7,
+    "ckpt": null,
+    "select": "last",
+    "device": "cpu",
+    "threads": 4,
+    "out": "results/main_runs/crossdb/dace_rand2_s7_trainstats",
+    "tag": "",
+    "smoke": false,
+    "use_cache": true
+  },
+  "torch": "2.10.0+cu128",
+  "started": "2026-09-30T16:45:47",
+  "model": "DACE",
+  "hparams": {
+    "hidden_dim": 128,
+    "mlp_activation": "ReLU",
+    "transformer_activation": "gelu",
+    "mlp_dropout": 0.3,
+    "transformer_dropout": 0.2
+  }
+}

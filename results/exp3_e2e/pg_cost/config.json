@@ -1,0 +1,11 @@
+{
+  "experiment": "exp3_e2e",
+  "out_dir": "results/exp3_e2e/pg_cost",
+  "args": {
+    "hint_plans": "data/e2e/hint_plans_job112",
+    "out": null,
+    "tag": ""
+  },
+  "started": "2026-09-12T09:47:13",
+  "steerer": "pg_cost"
+}

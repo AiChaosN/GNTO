@@ -1,0 +1,32 @@
+{
+  "model": "gnto_none",
+  "schedule": "sync",
+  "seed": 2,
+  "passes": 30,
+  "hint_plans": "data/e2e/hint_plans_v2_tpch52",
+  "max_runtime": 32000.0,
+  "explore": "bootstrap",
+  "threads": 2,
+  "limit_queries": null,
+  "out_root": "results/analysis/online_20261005",
+  "epochs": 100,
+  "bs": 128,
+  "lr": 0.001,
+  "preset": "dace_zero_shot",
+  "set": [
+    "graph.conv=none",
+    "graph.heads=1"
+  ],
+  "rank_weight": 1.0,
+  "rank_min_gap": 0.1,
+  "rank_space": "log",
+  "queries_per_batch": 3,
+  "grouped_batches": true,
+  "plan_representation": "ordered-binary-v1",
+  "drop_features": "",
+  "features": "pg",
+  "catalog": "data/e2e/hint_plans_v2_tpch52/pg_catalog_snapshot.json",
+  "n_queries": 52,
+  "n_plans": 643,
+  "started": "2026-10-08T12:30:22"
+}

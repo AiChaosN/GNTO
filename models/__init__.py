@@ -1,83 +1,10 @@
-# """
-# GNTO模型模块
-# 包含用于查询计划成本预测的各种神经网络组件
-# """
+"""GNTO model zoo.
 
-# # 导入主要的模块
-# from .NodeEncoder import (
-#     NodeEncoder_Mini,
-#     NodeEncoder_Enhanced,
-#     NodeEncoder_Vectorized,
-#     NodeEncoder_Mixed,
-#     NodeEncoder,
-#     default_emb_dim
-# )
+* ``models.gnto`` - GNTO (ours): node encoder -> GATv2 graph encoder -> readout -> head.
+* ``models.qf``   - QueryFormer (Zhao et al., VLDB 2022) tree-transformer, ported from
+                    the official QueryFormer ``model/`` package so the baseline trains
+                    from this repo with the data under ``data/`` and ``data/qf/``.
 
-# from .NodeEncoderFactory import (
-#     NodeEncoderFactory,
-#     NodeEncoderWrapper,
-#     create_query_plan_encoder
-# )
-
-# from .TreeEncoder import (
-#     GATTreeEncoder,
-#     TreeEncoder_GATMini
-# )
-
-# from .PredictionHead import (
-#     PredictionHead,
-#     PredictionHead_FNNMini
-# )
-
-# from .DataPreprocessor import (
-#     get_plans_dict,
-#     DataPreprocessor,
-#     plan_trees_to_graphs,
-#     graphs_to_df,
-#     df_to_graphs,
-#     DFStatisticsInfo,
-#     PlanNode
-# )
-
-# from .TrainAndEval import (
-#     build_dataset,
-#     EarlyStopping,
-#     coerce_edge_index
-# )
-
-# __all__ = [
-#     # NodeEncoder相关
-#     'NodeEncoder_Mini',
-#     'NodeEncoder_Enhanced', 
-#     'NodeEncoder_Vectorized',
-#     'NodeEncoder_Mixed',
-#     'NodeEncoder',
-#     'default_emb_dim',
-    
-#     # NodeEncoder工厂
-#     'NodeEncoderFactory',
-#     'NodeEncoderWrapper',
-#     'create_query_plan_encoder',
-    
-#     # TreeEncoder
-#     'GATTreeEncoder',
-#     'TreeEncoder_GATMini',
-    
-#     # PredictionHead
-#     'PredictionHead',
-#     'PredictionHead_FNNMini',
-    
-#     # 数据预处理
-#     'get_plans_dict',
-#     'DataPreprocessor',
-#     'plan_trees_to_graphs',
-#     'graphs_to_df',
-#     'df_to_graphs',
-#     'DFStatisticsInfo',
-#     'PlanNode',
-    
-#     # 训练和评估
-#     'build_dataset',
-#     'EarlyStopping',
-#     'coerce_edge_index'
-# ]
+Import the sub-package you need (``from models.gnto import GNTO``,
+``from models.qf import QueryFormer``); nothing heavy is imported here.
+"""

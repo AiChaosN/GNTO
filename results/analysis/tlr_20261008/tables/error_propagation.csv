@@ -1,0 +1,16 @@
+stat,repr,n,r,bucket,median_abs_log_err,kept_fraction
+n_test_operators,all,492511,,,,0.82
+by_size,cumulative,153445,,1-1,0.3455,
+by_size,residual,153445,,1-1,0.8562,
+by_size,cumulative,82658,,2-3,0.7287,
+by_size,residual,82658,,2-3,0.6309,
+by_size,cumulative,133926,,4-7,0.5205,
+by_size,residual,133926,,4-7,0.845,
+by_size,cumulative,114726,,8-15,0.63,
+by_size,residual,114726,,8-15,0.845,
+by_size,cumulative,7756,,16-max,0.6408,
+by_size,residual,7756,,16-max,0.7181,
+inherit_all,cumulative,339016,0.8114892093745567,,,
+inherit_all,residual,249507,0.11711546894871946,,,
+inherit_root,cumulative,50000,0.9977138749585697,,,
+inherit_root,residual,49887,0.3303972866201515,,,

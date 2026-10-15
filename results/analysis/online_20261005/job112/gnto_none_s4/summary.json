@@ -1,0 +1,18 @@
+{
+  "model": "gnto_none",
+  "seed": 4,
+  "passes": 30,
+  "explore": "bootstrap",
+  "schedule": "sync",
+  "n_retrain": 29,
+  "n_queries": 112,
+  "last5_geo_speedup": 1.2907631384539928,
+  "last5_total_s": 41.48822676496347,
+  "default_total_s": 93.51885607180884,
+  "oracle_total_s": 36.40397922991542,
+  "oracle_geo_speedup": 1.6373221082751854,
+  "cumulative_total_s": 1769.338012475404,
+  "cumulative_default_s": 2805.5656821542652,
+  "first_pass_at_least_default": 2,
+  "finished": "2026-10-08T12:37:46"
+}

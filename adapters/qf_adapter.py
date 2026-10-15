@@ -1,307 +1,195 @@
-"""
-QueryFormer Adapter - 适配 QueryFormer (VLDB2022) benchmark 的数据转换和模型组装。
+"""QueryFormer adapter: QueryFormer node features -> PyG graphs for GNTO.
 
-将 QueryFormer 的 PlanTreeDataset 数据格式转成 PyG Data，
-消除 3 个实验脚本中的重复代码 (1203, 1216, 1216_addPlanrows)。
+Everything QueryFormer-side now lives in this repo (``models.qf`` for the code,
+``data/qf`` for histograms / sample bitmaps / vocabulary), so no separate
+QueryFormer checkout is needed.
 
-依赖: QueryFormer_VLDB2022 仓库需要作为 sibling directory 存在。
+Usage::
 
-用法:
     from adapters.qf_adapter import (
-        QueryFormerToPyGDataset, GNTO_QF_Model,
-        load_qf_resources, unnormalize, calc_q_error, evaluate
+        load_qf_resources, QueryFormerToPyGDataset, GNTO_QF_Model,
+        unnormalize, calc_q_error, evaluate, evaluate_full,
     )
-"""
+    res = load_qf_resources()                      # encoding / hist / table_sample / cost_norm
+    ds = QueryFormerToPyGDataset(df, res["encoding"], res["hist_file"], res["table_sample"],
+                                 res["cost_norm"], cache_name="train_full", add_plan_rows=True, add_join_cols=True)
+    model = GNTO_QF_Model(res["encoding"])          # = preset "gnto": plan rows + compositional joins
 
+Both GNTO and QueryFormer featurise plans through :class:`models.qf.PlanFeaturizer`,
+so the per-node 1165-d features are bit-identical across the two models; GNTO
+appends a ``log1p(Plan Rows)`` channel and the join's two column ids (1168-d, ``gnto`` preset).
+"""
+from __future__ import annotations
+
+import json
 import os
 import sys
-import json
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
-import torch.nn as nn
 from torch.utils.data import Dataset
 from torch_geometric.data import Data
-from tqdm import tqdm
 
-# Import GNTO core models
 _gnto_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _gnto_root not in sys.path:
     sys.path.insert(0, _gnto_root)
 
-from models.TreeEncoder import GATv2TreeEncoder_V3
-from models.PredictionHead import PredictionHead_V2
-from models.NodeEncoder import NodeEncoder_QF, NodeEncoder_QF_AddPlanrows
+from models.gnto import GNTO, legacy_qf_config  # noqa: E402
+from models.qf import PlanFeaturizer, featurize_plans  # noqa: E402
+from models.qf import resources as _qf_res  # noqa: E402
+
+CACHE_DIR = os.path.join(_gnto_root, "data", "process", "cache")
 
 
 # ---------------------------------------------------------------------------
-# QueryFormer 资源加载
+# resources
 # ---------------------------------------------------------------------------
-def get_qf_path():
-    """自动查找 sibling 目录下的 QueryFormer_VLDB2022。"""
-    candidates = [
-        os.path.join(_gnto_root, "..", "QueryFormer_VLDB2022"),
-        os.path.join(_gnto_root, "..", "..", "QueryFormer_VLDB2022"),
-    ]
-    for c in candidates:
-        p = os.path.abspath(c)
-        if os.path.isdir(p):
-            return p
-    raise FileNotFoundError(
-        "QueryFormer_VLDB2022 not found. Expected as sibling directory of GNTO."
-    )
+def load_qf_resources(zero_table_sample: bool = False, sample: str = "train", **kwargs: Any) -> Dict[str, Any]:
+    """QueryFormer featurisation resources from ``data/qf`` (see
+    :func:`models.qf.resources.load_qf_resources`).
 
-
-def load_qf_resources(qf_path=None):
-    """加载 QueryFormer 的 encoding, hist_file, table_sample, Normalizer。
-
-    Returns:
-        dict with keys: encoding, hist_file, table_sample, cost_norm, data_path, qf_path
+    ``zero_table_sample=True`` replaces the per-query sample bitmaps with zeros -
+    only for plans that are in no sample file (live PG steering); training and
+    the job-light / synthetic workloads should use the real bitmaps.
     """
-    if qf_path is None:
-        qf_path = get_qf_path()
-
-    if qf_path not in sys.path:
-        sys.path.insert(0, qf_path)
-
-    from model.database_util import get_hist_file, get_job_table_sample
-    from model.util import Normalizer
-
-    data_path = os.path.join(qf_path, 'data/imdb/')
-    checkpoint_path = os.path.join(qf_path, 'checkpoints/encoding.pt')
-
-    hist_file = get_hist_file(data_path + 'histogram_string.csv')
-    table_sample = get_job_table_sample(data_path + 'train')
-    encoding_ckpt = torch.load(checkpoint_path, weights_only=False)
-    encoding = encoding_ckpt['encoding']
-    cost_norm = Normalizer(-3.61192, 12.290855)
-
-    return {
-        "encoding": encoding,
-        "hist_file": hist_file,
-        "table_sample": table_sample,
-        "cost_norm": cost_norm,
-        "data_path": data_path,
-        "qf_path": qf_path,
-    }
+    return _qf_res.load_qf_resources(zero_table_sample=zero_table_sample, sample=sample, **kwargs)
 
 
 # ---------------------------------------------------------------------------
-# Dataset: QueryFormer features → PyG Data
+# dataset: QueryFormer features -> PyG Data
 # ---------------------------------------------------------------------------
 class QueryFormerToPyGDataset(Dataset):
-    """把 QueryFormer CSV DataFrame 转成 PyG Data list，支持缓存。
+    """``Data(x=[N,1165(+1)], edge_index=[2,E] parent->child, y=normalised log-latency,
+    raw_y=Execution Time ms)`` per plan, cached as a list under ``data/process/cache``.
 
     Args:
-        df: pandas DataFrame，含 'json' 和 'id' 列
-        encoding: QueryFormer Encoding 对象
-        hist_file: histogram 数据
-        table_sample: table sample 数据
-        cost_norm: Normalizer 对象
-        cache_name: 缓存文件名前缀，None 则不缓存
-        add_plan_rows: 是否额外拼接 Plan Rows 特征 (1165 → 1166 维)
+        df: DataFrame with ``json`` and ``id`` columns
+        encoding / hist_file / table_sample / cost_norm: from :func:`load_qf_resources`
+        cache_name: cache file prefix (``<cache_name>[_planrows][_joincols]_<n>.pt``); None = no cache
+        add_plan_rows: append ``log1p(Plan Rows)`` per node (1165 -> 1166 dims)
+        add_join_cols: append the join's ``(col_left, col_right)`` column ids per node
+            (+2 dims, after plan_rows) for ``node.join_encoding != "id"``
+        num_workers: featurisation processes (fork); 1 = in-process
     """
 
     def __init__(self, df, encoding, hist_file, table_sample, cost_norm,
-                 cache_name=None, add_plan_rows=False):
+                 cache_name: Optional[str] = None, add_plan_rows: bool = False,
+                 num_workers: Optional[int] = None, add_join_cols: bool = False):
         self.df = df.reset_index(drop=True)
         self.cost_norm = cost_norm
-        self.data_list = []
+        self.data_list: List[Data] = []
 
-        # 缓存路径
         cache_file = None
         if cache_name:
-            suffix = "_planrows" if add_plan_rows else ""
-            cache_dir = os.path.join(_gnto_root, "data", "process", "cache")
-            os.makedirs(cache_dir, exist_ok=True)
-            cache_file = os.path.join(cache_dir, f"{cache_name}{suffix}_{len(df)}.pt")
+            suffix = ("_planrows" if add_plan_rows else "") + ("_joincols" if add_join_cols else "")
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            cache_file = os.path.join(CACHE_DIR, f"{cache_name}{suffix}_{len(self.df)}.pt")
             if os.path.exists(cache_file):
-                print(f"Loading cached data from {cache_file}...")
+                print(f"Loading cached data from {cache_file}...", flush=True)
                 self.data_list = torch.load(cache_file, weights_only=False)
                 return
 
-        # 需要 QF 的 PlanTreeDataset
-        qf_path = os.path.dirname(sys.modules['model.dataset'].__file__) \
-            if 'model.dataset' in sys.modules else None
-        from model.dataset import PlanTreeDataset
-        from model.util import Normalizer as QFNormalizer
-
-        print(f"Preprocessing {len(df)} samples...")
-        dummy_norm = QFNormalizer(1, 100)
-        qf_dataset = PlanTreeDataset(
-            self.df, None, encoding, hist_file,
-            dummy_norm, dummy_norm, 'cost', table_sample
-        )
-
-        for idx in tqdm(range(len(self.df)), desc="Processing"):
-            json_str = self.df.iloc[idx]['json']
-            plan = json.loads(json_str)['Plan']
-            query_id = self.df.iloc[idx]['id']
-
-            root = qf_dataset.traversePlan(plan, query_id, encoding)
-            node_dict = qf_dataset.node2dict(root)
-            qf_dataset.treeNodes.clear()
-
-            x = node_dict['features']
-            adj = node_dict['adjacency_list']
-            if len(adj) > 0:
-                edge_index = adj.t().long()
-            else:
-                edge_index = torch.zeros((2, 0), dtype=torch.long)
-
-            # 额外拼接 Plan Rows
+        items = featurize_plans(self.df, PlanFeaturizer(encoding, hist_file, table_sample),
+                                num_workers=num_workers, desc=f"gnto-featurize[{cache_name or 'nocache'}]",
+                                kind="tree")
+        for row_idx, it in enumerate(items):
+            x = it['features']
+            adj = it['adjacency_list']
+            edge_index = adj.t().long() if adj.numel() > 0 else torch.zeros((2, 0), dtype=torch.long)
             if add_plan_rows:
-                rows_list = []
-                self._extract_rows(plan, rows_list)
-                rows_tensor = torch.tensor(rows_list, dtype=torch.float).view(-1, 1)
-                if x.size(0) == rows_tensor.size(0):
-                    x = torch.cat([x, rows_tensor], dim=1)
-
-            # 标签
-            exec_time = json.loads(json_str)['Execution Time']
-            y_val = np.log(float(exec_time) + 0.001)
-            y_norm = (y_val - self.cost_norm.mini) / (self.cost_norm.maxi - self.cost_norm.mini)
-            y_norm = np.clip(y_norm, 0.001, 1.0)
-
-            data = Data(
-                x=x, edge_index=edge_index,
-                y=torch.tensor([y_norm], dtype=torch.float),
-            )
+                rows = self._plan_rows(json.loads(self.df.iloc[row_idx]['json'])['Plan'])
+                rows_t = torch.tensor(rows, dtype=torch.float).view(-1, 1)
+                if x.size(0) == rows_t.size(0):
+                    x = torch.cat([x, rows_t], dim=1)
+            if add_join_cols:
+                x = torch.cat([x, it['join_cols'].float()], dim=1)
+            exec_time = it['cost']
+            y_norm = np.clip((np.log(exec_time + 0.001) - cost_norm.mini) / (cost_norm.maxi - cost_norm.mini), 0.001, 1.0)
+            data = Data(x=x, edge_index=edge_index, y=torch.tensor([y_norm], dtype=torch.float))
             data.raw_y = torch.tensor([exec_time], dtype=torch.float)
             self.data_list.append(data)
 
         if cache_file:
-            print(f"Saving cache to {cache_file}...")
+            print(f"Saving cache to {cache_file}...", flush=True)
             torch.save(self.data_list, cache_file)
 
     @staticmethod
-    def _extract_rows(node, rows_list):
-        """DFS 提取每个节点的 Plan Rows (log1p)。"""
-        rows_list.append(np.log1p(float(node['Plan Rows'])))
-        if 'Plans' in node:
-            for child in node['Plans']:
-                QueryFormerToPyGDataset._extract_rows(child, rows_list)
+    def _plan_rows(node: Dict[str, Any]) -> List[float]:
+        """BFS (same order as ``PlanFeaturizer.topo_sort``) ``log1p(Plan Rows)`` per node."""
+        out: List[float] = []
+        queue = [node]
+        while queue:
+            n = queue.pop(0)
+            out.append(float(np.log1p(float(n['Plan Rows']))))
+            queue.extend(n.get('Plans', []))
+        return out
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data_list)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> Data:
         return self.data_list[idx]
 
 
 # ---------------------------------------------------------------------------
-# Model: GNTO with QF-style Node Encoder
+# model
 # ---------------------------------------------------------------------------
-class GNTO_QF_Model(nn.Module):
-    """组合 NodeEncoder_QF (或 AddPlanrows) + GATv2TreeEncoder_V3 + PredictionHead_V2。
-
-    Args:
-        encoding: QueryFormer Encoding 对象
-        hidden_dim: 隐层维度
-        add_plan_rows: 是否使用 NodeEncoder_QF_AddPlanrows
-    """
-
-    def __init__(self, encoding, hidden_dim=64, add_plan_rows=False):
-        super().__init__()
-
-        num_types = len(encoding.idx2type)
-        num_tables = len(encoding.idx2table)
-        num_joins = len(encoding.idx2join)
-        num_ops = len(encoding.idx2op)
-        num_columns = len(encoding.idx2col)
-
-        encoder_cls = NodeEncoder_QF_AddPlanrows if add_plan_rows else NodeEncoder_QF
-        self.node_encoder = encoder_cls(
-            embed_size=64,
-            tables=num_tables,
-            types=num_types,
-            joins=num_joins,
-            columns=num_columns,
-            ops=num_ops,
-            use_sample=True,
-            use_hist=True,
-            bin_number=50,
-        )
-
-        self.gnn = GATv2TreeEncoder_V3(
-            in_dim=64,  # NodeEncoder_QF 输出 embed_size=64
-            hidden_dim=hidden_dim,
-            out_dim=hidden_dim,
-            heads1=4,
-            heads2=2,
-            drop=0.0,
-        )
-
-        self.head = PredictionHead_V2(
-            in_dim=hidden_dim,
-            out_dim=1,
-            hidden_dims=(64, 64),
-            dropout=0.0,
-        )
-
-    def forward(self, data):
-        x = self.node_encoder(data.x)
-        x = self.gnn(x, data.edge_index, data.batch)
-        return torch.sigmoid(self.head(x))
+def GNTO_QF_Model(encoding, hidden_dim: int = 64, add_plan_rows: bool = True, join_encoding: str = "columns") -> GNTO:
+    """GNTO on QueryFormer features (``legacy_qf_config``): QueryFormerNodeEncoder
+    (+ Plan Rows channel, join as string id / column pair / both) -> 3-layer GATv2
+    (heads 4/2/1) -> mean readout -> residual head -> sigmoid.  Loads pre-rewrite
+    checkpoints via ``load_state_dict`` (``join_encoding="id"``)."""
+    return GNTO.from_config(legacy_qf_config(encoding, add_plan_rows=add_plan_rows, hidden_dim=hidden_dim,
+                                             join_encoding=join_encoding))
 
 
 # ---------------------------------------------------------------------------
-# 评测工具函数
+# evaluation helpers
 # ---------------------------------------------------------------------------
 def unnormalize(y_norm, cost_norm):
-    """把归一化的预测值还原为真实执行时间。"""
-    val = y_norm * (cost_norm.maxi - cost_norm.mini) + cost_norm.mini
+    """Normalised prediction -> execution time (ms)."""
+    val = np.asarray(y_norm, dtype=np.float64) * (cost_norm.maxi - cost_norm.mini) + cost_norm.mini
     return np.exp(val) - 0.001
 
 
 def calc_q_error(preds, targets):
-    """计算 Q-Error 百分位数 [50, 75, 90, 95, 99]。"""
-    from utils.metrics import qerror_percentiles
+    """Q-error percentiles [50, 75, 90, 95, 99] as an array."""
+    from models.gnto.metrics import qerror_percentiles
     q = qerror_percentiles(preds, targets, percentiles=(50, 75, 90, 95, 99))
     return np.array([q["q50"], q["q75"], q["q90"], q["q95"], q["q99"]])
 
 
+@torch.no_grad()
 def _run_inference(model, loader, cost_norm, device):
-    """Shared loop: returns (avg_loss, preds_raw, targets_raw) on the raw scale."""
     model.eval()
-    preds_all, targets_all = [], []
-    total_loss = 0
-
-    with torch.no_grad():
-        for batch in loader:
-            batch = batch.to(device)
-            out = model(batch).view(-1)
-            loss = torch.nn.functional.mse_loss(out, batch.y)
-            total_loss += loss.item() * batch.num_graphs
-
-            pred_raw = unnormalize(out.cpu().numpy(), cost_norm)
-            target_raw = batch.raw_y.cpu().numpy()
-            preds_all.extend(pred_raw)
-            targets_all.extend(target_raw)
-
-    avg_loss = total_loss / len(loader.dataset)
-    return avg_loss, np.asarray(preds_all), np.asarray(targets_all)
+    preds_all, targets_all, total_loss = [], [], 0.0
+    for batch in loader:
+        batch = batch.to(device)
+        out = model(batch).view(-1)
+        total_loss += torch.nn.functional.mse_loss(out, batch.y.view(-1)).item() * batch.num_graphs
+        preds_all.append(unnormalize(out.cpu().numpy(), cost_norm))
+        targets_all.append(batch.raw_y.view(-1).cpu().numpy())
+    n = len(loader.dataset)
+    return total_loss / max(n, 1), np.concatenate(preds_all), np.concatenate(targets_all)
 
 
 def evaluate(model, loader, cost_norm, device):
-    """在验证集上评测，返回 (avg_loss, q50, q75, q90, q95, q99)。"""
+    """``(avg_loss, q50, q75, q90, q95, q99)`` on a PyG DataLoader."""
     avg_loss, preds, targets = _run_inference(model, loader, cost_norm, device)
-    q50, q75, q90, q95, q99 = calc_q_error(preds, targets)
-    return avg_loss, q50, q75, q90, q95, q99
+    return (avg_loss, *calc_q_error(preds, targets))
 
 
 def evaluate_full(model, loader, cost_norm, device, group_ids=None):
-    """Rich evaluation: Q-Error + Spearman/Kendall/pairwise-acc + (optional) Top-1 regret.
-
-    Returns:
-        dict with keys: avg_loss, q50/q75/q90/q95/q99, spearman, kendall,
-        pairwise_acc, and (if group_ids given) top1_regret_mean/median/relative.
-        Also embeds preds and targets arrays for downstream use.
-    """
-    from utils.metrics import evaluation_summary
+    """Q-error percentiles + Spearman / Kendall / pairwise accuracy (+ top-1 regret
+    with ``group_ids``); ``preds`` / ``targets`` arrays included."""
+    from models.gnto.metrics import evaluation_summary
     avg_loss, preds, targets = _run_inference(model, loader, cost_norm, device)
     summary = {"avg_loss": float(avg_loss)}
     summary.update(evaluation_summary(preds, targets, group_ids=group_ids))
-    summary["preds"] = preds
-    summary["targets"] = targets
+    summary["preds"], summary["targets"] = preds, targets
     return summary
+
+
+__all__ = ["load_qf_resources", "QueryFormerToPyGDataset", "GNTO_QF_Model", "unnormalize", "calc_q_error",
+           "evaluate", "evaluate_full", "CACHE_DIR"]

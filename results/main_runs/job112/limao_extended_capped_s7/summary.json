@@ -1,0 +1,321 @@
+{
+  "steerer": "limao_kfold",
+  "n_queries": 112,
+  "total_runtime_ms": 142813.1474321126,
+  "pg_default_total_ms": 93518.85607180884,
+  "oracle_total_ms": 36403.97922991542,
+  "speedup_vs_pg_default": 0.6548336602991247,
+  "runtime_vs_oracle": 3.923009254844155,
+  "mean_rel_regret": 6.062010954161882,
+  "median_rel_regret": 1.4351460986919697,
+  "p90_rel_regret": 12.592314237884576,
+  "max_rel_regret": 86.55593108066203,
+  "wins_vs_pg_default": 30,
+  "losses_vs_pg_default": 60,
+  "regressions_2x": 29,
+  "oracle_hits": 15,
+  "rel_speedup_geomean": 0.6355898775705365,
+  "rel_speedup_geomean_trimmed": 0.658130255851004,
+  "rel_speedup_mean": 0.8959683707185031,
+  "rel_speedup_p10": 0.13961189928238635,
+  "rel_speedup_p25": 0.45829110863519557,
+  "rel_speedup_p50": 0.9863292238239154,
+  "rel_speedup_p75": 1.0066258365035916,
+  "rel_speedup_p90": 1.1706984913497804,
+  "rel_speedup_min": 0.016766304287204364,
+  "better_n": 16,
+  "worse_n": 49,
+  "tie_n": 47,
+  "better_pct": 14.285714285714285,
+  "worse_pct": 43.75,
+  "tie_pct": 41.964285714285715,
+  "tol": 0.05,
+  "moved_n": 90,
+  "moved_better_pct": 17.77777777777778,
+  "moved_worse_pct": 54.44444444444444,
+  "wilcoxon_p_vs_pg": 1.1662206888026399e-05,
+  "sign_test_p": 5.084767048790175e-05,
+  "template_cluster_interval": {
+    "geomean": 0.6355898775705365,
+    "ci95_low": 0.5063620942999972,
+    "ci95_high": 0.7884812564790724,
+    "n_queries": 112,
+    "n_templates": 35,
+    "bootstrap_samples": 20000,
+    "bootstrap_seed": 0,
+    "resampling_unit": "template",
+    "weighting": "query",
+    "conditional_on_fitted_models": true,
+    "template_equal_weight_geomean": 0.6421818725728734,
+    "template_wilcoxon_p": 0.0014256475483254694
+  },
+  "by_join_bucket": {
+    "3-4": {
+      "n": 23,
+      "total_runtime_ms": 7764.480461017229,
+      "pg_default_total_ms": 7358.3362069912255,
+      "oracle_total_ms": 3311.007368960418,
+      "speedup_vs_pg_default": 0.9476920244612485,
+      "mean_rel_regret": 9.13136303830293,
+      "rel_speedup_geomean": 0.7748401940742085,
+      "rel_speedup_p50": 1.0,
+      "better_n": 2,
+      "worse_n": 6,
+      "tie_n": 15
+    },
+    "5+": {
+      "n": 89,
+      "total_runtime_ms": 135048.66697109537,
+      "pg_default_total_ms": 86160.51986481762,
+      "oracle_total_ms": 33092.971860955004,
+      "speedup_vs_pg_default": 0.6379960779861578,
+      "mean_rel_regret": 5.26880760657487,
+      "rel_speedup_geomean": 0.6038695962625714,
+      "rel_speedup_p50": 0.9654292470823147,
+      "better_n": 14,
+      "worse_n": 43,
+      "tie_n": 32
+    }
+  },
+  "timeout_picks": 0,
+  "timeout_pick_pct": 0.0,
+  "params": {
+    "total": 788164,
+    "trainable": 788164
+  },
+  "finished": "2026-09-30T11:36:07",
+  "prediction_quality": {
+    "n_plans": 1895,
+    "censored_plans_excluded_from_accuracy": 4,
+    "q50": 3.1887106010322204,
+    "q90": 22.980967007503455,
+    "q99": 155.85179501016535,
+    "q_mean": 16.236075188190537,
+    "per_query_spearman_mean": 0.4856384490611741,
+    "per_query_spearman_median": 0.6174868609651217,
+    "per_query_kendall_mean": 0.3781352865197837,
+    "global_spearman": 0.39537081745036623
+  },
+  "model": "limao",
+  "folds": 5,
+  "seed": 7,
+  "split_seed": 42,
+  "plan_representation": "ordered-binary-v1",
+  "native_tree_adapter": "extended-tree-v1",
+  "candidate_policy": "complete",
+  "deduplicate": true,
+  "epochs": 100,
+  "native_timeout_target": "budget-capped",
+  "rank_weight": 0.0,
+  "rank_space": "log",
+  "drop_features": "",
+  "features": "dace",
+  "group": "template",
+  "extra_train": "",
+  "preset": null,
+  "overrides": [],
+  "fold_info": [
+    {
+      "fold": 0,
+      "n_train": 1508,
+      "n_test": 391,
+      "train_s": 191.92722868919373,
+      "score_s": 1.2758567333221436,
+      "epochs_run": 52,
+      "checkpoint": "results/main_runs/job112/limao_extended_capped_s7/limao_folds/fold0_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 78416,
+        "b0": 1508,
+        "b1": 76908,
+        "c0": 12844,
+        "c1": 56368,
+        "c2": 9204
+      },
+      "module_usage_test_first": {
+        "a0": 18,
+        "b1": 18,
+        "c1": 14,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 391,
+        "b0": 66,
+        "b1": 325,
+        "c0": 20,
+        "c1": 280,
+        "c2": 91
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 1,
+      "n_train": 1537,
+      "n_test": 362,
+      "train_s": 191.61815786361694,
+      "score_s": 1.007232666015625,
+      "epochs_run": 49,
+      "checkpoint": "results/main_runs/job112/limao_extended_capped_s7/limao_folds/fold1_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 75313,
+        "b0": 1421,
+        "b1": 73892,
+        "c0": 11858,
+        "c1": 54684,
+        "c2": 8771
+      },
+      "module_usage_test_first": {
+        "a0": 21,
+        "b1": 21,
+        "c0": 1,
+        "c1": 20
+      },
+      "module_usage_test_per_plan": {
+        "a0": 362,
+        "b0": 37,
+        "b1": 325,
+        "c0": 11,
+        "c1": 270,
+        "c2": 81
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 2,
+      "n_train": 1554,
+      "n_test": 345,
+      "train_s": 188.16179537773132,
+      "score_s": 0.8656120300292969,
+      "epochs_run": 47,
+      "checkpoint": "results/main_runs/job112/limao_extended_capped_s7/limao_folds/fold2_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 73038,
+        "b0": 1692,
+        "b1": 71346,
+        "c0": 11985,
+        "c1": 52452,
+        "c2": 8601
+      },
+      "module_usage_test_first": {
+        "a0": 23,
+        "b1": 23,
+        "c1": 19,
+        "c2": 4
+      },
+      "module_usage_test_per_plan": {
+        "a0": 345,
+        "b0": 16,
+        "b1": 329,
+        "c0": 1,
+        "c1": 238,
+        "c2": 106
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 3,
+      "n_train": 1509,
+      "n_test": 390,
+      "train_s": 205.7050223350525,
+      "score_s": 0.9920129776000977,
+      "epochs_run": 53,
+      "checkpoint": "results/main_runs/job112/limao_extended_capped_s7/limao_folds/fold3_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 79977,
+        "b0": 1431,
+        "b1": 78546,
+        "c0": 12349,
+        "c1": 59148,
+        "c2": 8480
+      },
+      "module_usage_test_first": {
+        "a0": 23,
+        "b1": 23,
+        "c0": 2,
+        "c1": 19,
+        "c2": 2
+      },
+      "module_usage_test_per_plan": {
+        "a0": 390,
+        "b0": 31,
+        "b1": 359,
+        "c0": 21,
+        "c1": 288,
+        "c2": 81
+      },
+      "assign": "per_plan"
+    },
+    {
+      "fold": 4,
+      "n_train": 1488,
+      "n_test": 411,
+      "train_s": 194.26677203178406,
+      "score_s": 0.9122145175933838,
+      "epochs_run": 50,
+      "checkpoint": "results/main_runs/job112/limao_extended_capped_s7/limao_folds/fold4_out_model",
+      "plan_representation": "ordered-binary-v1",
+      "native_tree_adapter": "extended-tree-v1",
+      "n_params": 788164,
+      "modules": {
+        "other": 1,
+        "hash_join": 2,
+        "nested_loop": 3
+      },
+      "module_usage_train": {
+        "a0": 74400,
+        "b0": 1700,
+        "b1": 72700,
+        "c0": 12250,
+        "c1": 52500,
+        "c2": 9650
+      },
+      "module_usage_test_first": {
+        "a0": 27,
+        "b0": 1,
+        "b1": 26,
+        "c1": 25,
+        "c2": 2
+      },
+      "module_usage_test_per_plan": {
+        "a0": 411,
+        "b0": 15,
+        "b1": 396,
+        "c0": 8,
+        "c1": 306,
+        "c2": 97
+      },
+      "assign": "per_plan"
+    }
+  ]
+}

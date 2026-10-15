@@ -1,0 +1,4 @@
+split,variant,reference,metric,n_dbs,wins,losses,ties,mean_ratio,wilcoxon_p_two_sided,wilcoxon_p_less,sign_test_p_two_sided
+paper,gnto,dace,q50,10,10,0,0,0.8948425737671016,0.001953125,0.0009765625,0.001953125
+rand1,gnto,dace,q50,10,9,1,0,0.8551021463316075,0.00390625,0.001953125,0.021484375
+rand2,gnto,dace,q50,10,6,4,0,0.9723813022204773,0.16015625,0.080078125,0.75390625

@@ -1,0 +1,3 @@
+workload,records,records_penalized,distinct,distinct_penalized,penalized_with_unpenalized_twin,default_plan_penalized
+job112,5488,812,1899,334,0,0
+tpch52,2548,388,643,155,0,0

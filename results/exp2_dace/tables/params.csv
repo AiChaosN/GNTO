@@ -1,0 +1,3 @@
+model,variant,total_params,trainable_params
+DACE,dace,23355,12283
+GNTO,gnto,260161,260161

@@ -1,0 +1,4 @@
+model,dir,total_params,trainable_params
+GNTO (string-id join),gnto_joinid_holdout,299477,299477
+GNTO,gnto_holdout,302613,302613
+QueryFormer,qf,4484519,4484519

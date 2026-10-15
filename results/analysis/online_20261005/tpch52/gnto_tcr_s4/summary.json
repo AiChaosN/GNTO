@@ -1,0 +1,16 @@
+{
+  "model": "gnto_tcr",
+  "seed": 4,
+  "passes": 30,
+  "explore": "bootstrap",
+  "n_queries": 52,
+  "last5_geo_speedup": 1.148918340888401,
+  "last5_total_s": 19.081903065915686,
+  "default_total_s": 22.392874119919725,
+  "oracle_total_s": 18.422709456062876,
+  "oracle_geo_speedup": 1.2262428910230716,
+  "cumulative_total_s": 622.1714116863441,
+  "cumulative_default_s": 671.7862235975917,
+  "first_pass_at_least_default": 2,
+  "finished": "2026-10-05T06:33:19"
+}
