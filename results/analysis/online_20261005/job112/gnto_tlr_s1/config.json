@@ -1,0 +1,32 @@
+{
+  "model": "gnto_tlr",
+  "schedule": "sync",
+  "seed": 1,
+  "passes": 30,
+  "hint_plans": "data/e2e/hint_plans_v2_job112",
+  "max_runtime": 32000.0,
+  "explore": "bootstrap",
+  "threads": 2,
+  "limit_queries": null,
+  "out_root": "results/analysis/online_20261005",
+  "epochs": 100,
+  "bs": 128,
+  "lr": 0.001,
+  "preset": "dace_zero_shot",
+  "set": [
+    "graph.conv=gatv2",
+    "graph.heads=1"
+  ],
+  "rank_weight": 1.0,
+  "rank_min_gap": 0.1,
+  "rank_space": "log",
+  "queries_per_batch": 3,
+  "grouped_batches": true,
+  "plan_representation": "ordered-binary-v1",
+  "drop_features": "",
+  "features": "dace",
+  "catalog": "data/e2e/hint_plans_v2_job112/pg_catalog_snapshot.json",
+  "n_queries": 112,
+  "n_plans": 1899,
+  "started": "2026-10-15T10:58:08"
+}

@@ -1,7 +1,8 @@
 """Plan-selection folds (exp/exp3_e2e/run_kfold.py, unchanged) with the TCR inputs taken apart as in the root-cost
 controls of the dependency study: ``rootcost`` = type + rows + the root's cumulative cost broadcast to every operator;
-``localcost`` = rootcost + the operator's cost residual; ``resid`` = type + rows + the residual (TLR, no root cost).
-Use with --features dace.
+``localcost`` = rootcost + the operator's cost residual; ``resid`` = type + rows + the residual (TLR, no root cost);
+``residg`` = resid with the grouping nodes of ordered-binary-v1 resolved (derived.own_cost). Use with
+--features dace.
 
     python analysis/attn/run_kfold_cost.py --cost rootcost <the arguments of run_kfold.py>
 """
@@ -21,10 +22,10 @@ import run_kfold as rk  # noqa: E402
 
 def main() -> None:
     if "--cost" not in sys.argv:
-        raise SystemExit("usage: run_kfold_cost.py --cost rootcost|localcost|resid <run_kfold arguments>")
+        raise SystemExit("usage: run_kfold_cost.py --cost rootcost|localcost|resid|residslog|residg <run_kfold arguments>")
     i = sys.argv.index("--cost")
     cost = sys.argv[i + 1]
-    assert cost in ("rootcost", "localcost", "resid", "residslog"), cost
+    assert cost in ("rootcost", "localcost", "resid", "residslog", "residg"), cost
     sys.argv = [sys.argv[0]] + sys.argv[1:i] + sys.argv[i + 2:]
     original = rk.make_featurizer
 

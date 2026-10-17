@@ -221,6 +221,7 @@ python exp/exp4_ablation/plot.py
 | `bash analysis/baselines/run_all.sh`, `run_subset_all.sh`, `zeroshot_more.sh` | `results/analysis/dependency_20261003/`, `results/analysis/zs_subset_20261008/` |
 | `bash analysis/online/run_all.sh`, `run_all_tpch.sh`, `run_async_and_none.sh` | `results/analysis/online_20261005/` |
 | `bash analysis/tlr/run_all.sh`, `run_selection.sh`, `run_tlr_base.sh` | `results/analysis/tlr_20261008/` |
+| `bash analysis/tlr/run_e2e_tlr.sh` (TLR inputs, online and TPC-H plan selection) | `results/analysis/online_20261005/`, `results/analysis/{attn,tlr}_20261008/selection/` |
 
 The header of each script lists its run groups. The Python scripts next to them (`analyze_*.py`, `report.py`, ...)
 build the tables from the run directories.

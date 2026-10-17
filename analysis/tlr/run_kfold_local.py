@@ -6,6 +6,9 @@ scaled by the median / inter-quartile range of the training nodes, by substituti
 run_kfold.make_featurizer instantiates. Everything else (folds, candidates, objective, epochs) is run_kfold's.
 
     python analysis/tlr/run_kfold_local.py --features pg <the other arguments of run_kfold.py>
+
+``--resolve-groups`` computes the own cost with the grouping nodes of ordered-binary-v1 resolved
+(analysis/attn/derived.own_cost); without it a grouping node counts as an input of cost 0. Identical on JOB.
 """
 from __future__ import annotations
 
@@ -20,6 +23,8 @@ for p in (os.path.join(ROOT, "exp", "exp3_e2e"), ROOT):
         sys.path.insert(0, p)
 
 from adapters import pg_features as pf  # noqa: E402
+sys.path.append(os.path.join(ROOT, "analysis", "attn"))
+from derived import own_cost  # noqa: E402
 
 
 def local_cost(node) -> float:
@@ -32,6 +37,10 @@ def slog(x: float) -> float:
 
 class PGFeaturizerLocal(pf.PGFeaturizer):
     """PG-stat + the operator's own cost."""
+    resolve_groups = False          # True: derived.own_cost (grouping nodes resolved) instead of local_cost
+
+    def own(self, node) -> float:
+        return own_cost(node) if self.resolve_groups else local_cost(node)
 
     def __init__(self, catalog):
         super().__init__(catalog)
@@ -44,7 +53,7 @@ class PGFeaturizerLocal(pf.PGFeaturizer):
     def fit(self, plans):
         plans = list(plans)
         super().fit(plans)
-        vals = np.array([slog(local_cost(n)) for p in plans for n in pf._walk(p["Plan"] if "Plan" in p else p)])
+        vals = np.array([slog(self.own(n)) for p in plans for n in pf._walk(p["Plan"] if "Plan" in p else p)])
         q25, q50, q75 = np.percentile(vals, [25, 50, 75])
         self.local_center = float(q50)
         self.local_scale = float(q75 - q25) or (float(vals.std()) or 1.0)
@@ -52,11 +61,14 @@ class PGFeaturizerLocal(pf.PGFeaturizer):
 
     def node_vector(self, node):
         base = super().node_vector(node)
-        extra = np.array([(slog(local_cost(node)) - self.local_center) / self.local_scale], dtype=np.float32)
+        extra = np.array([(slog(self.own(node)) - self.local_center) / self.local_scale], dtype=np.float32)
         return np.concatenate([base, extra])
 
 
 def main() -> None:
+    if "--resolve-groups" in sys.argv:
+        sys.argv.remove("--resolve-groups")
+        PGFeaturizerLocal.resolve_groups = True
     pf.PGFeaturizer = PGFeaturizerLocal          # run_kfold imports the class from the module at call time
     import run_kfold as rk
     rk.main()

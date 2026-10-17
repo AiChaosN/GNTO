@@ -13,6 +13,10 @@ Nothing is tuned here: the models, inputs, objectives and epochs are those of th
     gnto      GNTO, PG-stat inputs, ranking objective (the default GNTO selector)
     gnto_none the same without message passing (graph.conv=none): the independent-operator selector
     gnto_tcr  GNTO, type / cost / rows inputs, ranking objective
+    gnto_tlr  GNTO, TLR inputs: type / the operator's own cost / rows, ranking objective (the residual of
+              analysis/attn/derived.py, feature set residg = resid with the grouping nodes resolved)
+    gnto_pgl  GNTO, PG-stat inputs + the operator's own cost, ranking objective (the featurizer of
+              analysis/tlr/run_kfold_local.py with --resolve-groups)
 
 Schedules (``--schedule``).  ``sync``: a pass starts with the model retrained on all previous passes; retraining is
 not on the clock.  ``async``: Bao's background trainer.  A clock advances by the execution time of the chosen plans;
@@ -53,6 +57,8 @@ from common import PG_DEFAULT_HINT, load_packs, set_seed       # noqa: E402
 from protocol import plan_fingerprint                          # noqa: E402
 from adapters.plan_representation import represent_plan       # noqa: E402
 sys.argv = _argv
+sys.path.append(os.path.join(ROOT, "analysis", "attn"))
+sys.path.append(os.path.join(ROOT, "analysis", "tlr"))
 
 REPRESENTATION = "ordered-binary-v1"
 OFFLINE = dict(epochs=100, bs=128, lr=1e-3, preset="dace_zero_shot", set=["graph.conv=gatv2", "graph.heads=1"],
@@ -99,6 +105,9 @@ def fit_predict(model: str, entries, rows, a, log, work: str) -> np.ndarray:
         return pred
     plans = [rows[k].plan for k, _, _ in entries]
     fz = rk.make_featurizer(rk.build_stats(plans), a, plans)
+    if model == "gnto_tlr":                     # type + rows + the operator's own cost in place of the cumulative cost
+        from derived import DerivedFeaturizer
+        fz = DerivedFeaturizer(fz, "residg", [p if "Plan" in p else {"Plan": p} for p in plans])
     train = [rk.to_graph(rows[k].plan, fz, min(ms / a.max_runtime, 1.0), rows[k].q, rows[k].hint, ms, cens)
              for k, ms, cens in entries]
     net, _ = rk.train_gnto(train, a, fz.node_length, torch.device("cpu"), log)
@@ -108,7 +117,7 @@ def fit_predict(model: str, entries, rows, a, log, work: str) -> np.ndarray:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--model", required=True, choices=["gnto", "gnto_none", "gnto_tcr", "bao", "limao"])
+    ap.add_argument("--model", required=True, choices=["gnto", "gnto_none", "gnto_tcr", "gnto_tlr", "gnto_pgl", "bao", "limao"])
     ap.add_argument("--schedule", default="sync", choices=["sync", "async"],
                     help="sync: retrain between passes; async: background trainer on a clock of execution time (see above)")
     ap.add_argument("--seed", type=int, default=1)
@@ -123,7 +132,12 @@ def main() -> None:
     a = ap.parse_args()
     for k, v in OFFLINE.items():
         setattr(a, k, v)
-    a.features = "pg" if a.model in ("gnto", "gnto_none") else "dace"
+    a.features = "pg" if a.model in ("gnto", "gnto_none", "gnto_pgl") else "dace"
+    if a.model == "gnto_pgl":                   # PG-stat + the operator's own cost: run_kfold builds the patched class
+        from adapters import pg_features as pf
+        from run_kfold_local import PGFeaturizerLocal
+        PGFeaturizerLocal.resolve_groups = True
+        pf.PGFeaturizer = PGFeaturizerLocal
     if a.model == "gnto_none":
         a.set = ["graph.conv=none", "graph.heads=1"]
     a.catalog = os.path.join(a.hint_plans, "pg_catalog_snapshot.json")
